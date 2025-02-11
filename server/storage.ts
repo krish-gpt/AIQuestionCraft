@@ -1,92 +1,82 @@
-import { User, Survey, Response, InsertUser, InsertSurvey, InsertResponse } from "@shared/schema";
+import { users, surveys, responses } from "@shared/schema";
+import type { User, Survey, Response, InsertUser, InsertSurvey, InsertResponse } from "@shared/schema";
+import { db } from "./db";
+import { eq } from "drizzle-orm";
 import session from "express-session";
-import createMemoryStore from "memorystore";
+import connectPg from "connect-pg-simple";
+import { pool } from "./db";
 
-const MemoryStore = createMemoryStore(session);
+const PostgresSessionStore = connectPg(session);
 
 export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
-  
+
   createSurvey(survey: InsertSurvey & { userId: number }): Promise<Survey>;
   getSurvey(id: number): Promise<Survey | undefined>;
   getSurveysByUser(userId: number): Promise<Survey[]>;
-  
+
   createResponse(response: InsertResponse): Promise<Response>;
   getResponsesBySurvey(surveyId: number): Promise<Response[]>;
-  
+
   sessionStore: session.Store;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<number, User>;
-  private surveys: Map<number, Survey>;
-  private responses: Map<number, Response>;
-  currentId: { user: number; survey: number; response: number };
+export class DatabaseStorage implements IStorage {
   sessionStore: session.Store;
 
   constructor() {
-    this.users = new Map();
-    this.surveys = new Map();
-    this.responses = new Map();
-    this.currentId = { user: 1, survey: 1, response: 1 };
-    this.sessionStore = new MemoryStore({
-      checkPeriod: 86400000,
+    this.sessionStore = new PostgresSessionStore({
+      pool,
+      createTableIfMissing: true,
     });
   }
 
   async getUser(id: number): Promise<User | undefined> {
-    return this.users.get(id);
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user;
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const id = this.currentId.user++;
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
+    const [user] = await db.insert(users).values(insertUser).returning();
     return user;
   }
 
   async createSurvey(insertSurvey: InsertSurvey & { userId: number }): Promise<Survey> {
-    const id = this.currentId.survey++;
-    const survey: Survey = { ...insertSurvey, id };
-    this.surveys.set(id, survey);
+    const [survey] = await db.insert(surveys).values(insertSurvey).returning();
     return survey;
   }
 
   async getSurvey(id: number): Promise<Survey | undefined> {
-    return this.surveys.get(id);
+    const [survey] = await db.select().from(surveys).where(eq(surveys.id, id));
+    return survey;
   }
 
   async getSurveysByUser(userId: number): Promise<Survey[]> {
-    return Array.from(this.surveys.values()).filter(
-      (survey) => survey.userId === userId,
-    );
+    return db.select().from(surveys).where(eq(surveys.userId, userId));
   }
 
   async createResponse(insertResponse: InsertResponse): Promise<Response> {
-    const id = this.currentId.response++;
-    const response: Response = {
-      ...insertResponse,
-      id,
-      submittedAt: new Date(),
-      sentiment: null,
-    };
-    this.responses.set(id, response);
+    const [response] = await db
+      .insert(responses)
+      .values({
+        ...insertResponse,
+        submittedAt: new Date(),
+        sentiment: null,
+      })
+      .returning();
     return response;
   }
 
   async getResponsesBySurvey(surveyId: number): Promise<Response[]> {
-    return Array.from(this.responses.values()).filter(
-      (response) => response.surveyId === surveyId,
-    );
+    return db.select().from(responses).where(eq(responses.surveyId, surveyId));
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();
