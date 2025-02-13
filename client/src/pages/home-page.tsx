@@ -19,10 +19,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, BarChart3, Share2, ClipboardList } from "lucide-react";
+import { Plus, BarChart3, Share2, ClipboardList, LogOut } from "lucide-react";
 
 export default function HomePage() {
-  const { user } = useAuth();
+  const { user, logoutMutation } = useAuth();
   const { data: surveys, isLoading } = useQuery<Survey[]>({
     queryKey: ["/api/surveys"],
   });
@@ -31,13 +31,34 @@ export default function HomePage() {
     <div className="min-h-screen bg-background">
       <div className="container max-w-6xl py-8">
         {/* Hero Section */}
-        <div className="mb-8 text-center">
-          <div className="flex justify-center mb-4">
-            <ClipboardList className="h-12 w-12 text-primary" />
+        <div className="mb-8">
+          <div className="flex justify-between items-center mb-4">
+            <div className="flex items-center gap-4">
+              <ClipboardList className="h-12 w-12 text-primary" />
+              <div>
+                <h1 className="text-4xl font-bold">Home Page</h1>
+                <p className="text-xl text-muted-foreground">
+                  Hello, {user?.username}!
+                </p>
+              </div>
+            </div>
+            <Button 
+              variant="outline" 
+              onClick={() => logoutMutation.mutate()}
+              disabled={logoutMutation.isPending}
+            >
+              {logoutMutation.isPending ? (
+                "Logging out..."
+              ) : (
+                <>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Sign Out
+                </>
+              )}
+            </Button>
           </div>
-          <h1 className="text-4xl font-bold mb-2">Home Page</h1>
           <p className="text-xl text-muted-foreground mb-6">
-            Hello, {user?.username}! Create and analyze surveys with AI-powered insights.
+            Create and analyze surveys with AI-powered insights.
           </p>
           <Button asChild size="lg">
             <Link href="/create">
