@@ -35,7 +35,7 @@ export default function HomePage() {
           <div className="flex justify-center mb-4">
             <ClipboardList className="h-12 w-12 text-primary" />
           </div>
-          <h1 className="text-4xl font-bold mb-2">Welcome to Survey Analytics</h1>
+          <h1 className="text-4xl font-bold mb-2">Home Page</h1>
           <p className="text-xl text-muted-foreground mb-6">
             Hello, {user?.username}! Create and analyze surveys with AI-powered insights.
           </p>
