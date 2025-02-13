@@ -67,11 +67,22 @@ interface InsightData {
   };
 }
 
+interface SurveyQuestion {
+  id: string;
+  text: string;
+  type: string;
+  options?: string[];
+}
+
+interface ExtendedSurvey extends Survey {
+  questions: SurveyQuestion[];
+}
+
 export default function Analytics({ params }: { params: { id: string } }) {
   const { toast } = useToast();
   const surveyId = parseInt(params.id);
 
-  const { data: survey, isLoading: surveyLoading } = useQuery<Survey>({
+  const { data: survey, isLoading: surveyLoading } = useQuery<ExtendedSurvey>({
     queryKey: [`/api/surveys/${surveyId}`],
   });
 
@@ -108,7 +119,7 @@ export default function Analytics({ params }: { params: { id: string } }) {
   }
 
   const getQuestionStats = (questionId: string) => {
-    if (!responses) return [];
+    if (!responses || !survey) return [];
 
     const question = survey.questions.find((q) => q.id === questionId);
     if (!question) return [];
@@ -116,7 +127,9 @@ export default function Analytics({ params }: { params: { id: string } }) {
     if (question.type === "multiple_choice") {
       const counts = responses.reduce((acc, response) => {
         const answer = response.answers[questionId];
-        acc[answer] = (acc[answer] || 0) + 1;
+        if (answer) {
+          acc[answer] = (acc[answer] || 0) + 1;
+        }
         return acc;
       }, {} as Record<string, number>);
 
@@ -129,7 +142,9 @@ export default function Analytics({ params }: { params: { id: string } }) {
     if (question.type === "rating") {
       const counts = responses.reduce((acc, response) => {
         const answer = response.answers[questionId];
-        acc[answer] = (acc[answer] || 0) + 1;
+        if (answer) {
+          acc[answer] = (acc[answer] || 0) + 1;
+        }
         return acc;
       }, {} as Record<string, number>);
 
@@ -165,7 +180,7 @@ export default function Analytics({ params }: { params: { id: string } }) {
   };
 
   const averageSentiment = responses?.reduce((sum, response) => {
-    return sum + (response.sentiment?.rating || 0);
+    return sum + ((response.sentiment?.rating as number) || 0);
   }, 0) / (responses?.length || 1);
 
   return (
@@ -385,8 +400,8 @@ export default function Analytics({ params }: { params: { id: string } }) {
         </TabsContent>
 
         <TabsContent value="charts" className="space-y-8">
-          {survey.questions
-            .filter((q) => q.type !== "text")
+          {survey?.questions
+            ?.filter((q) => q.type !== "text")
             .map((question) => (
               <Card key={question.id}>
                 <CardHeader>
@@ -417,7 +432,7 @@ export default function Analytics({ params }: { params: { id: string } }) {
                   <TableRow>
                     <TableHead>Submitted At</TableHead>
                     <TableHead>Sentiment</TableHead>
-                    {survey.questions.map((question) => (
+                    {survey?.questions.map((question) => (
                       <TableHead key={question.id}>
                         {question.text}
                       </TableHead>
@@ -442,7 +457,7 @@ export default function Analytics({ params }: { params: { id: string } }) {
                           "N/A"
                         )}
                       </TableCell>
-                      {survey.questions.map((question) => (
+                      {survey?.questions.map((question) => (
                         <TableCell key={question.id}>
                           {response.answers[question.id]}
                         </TableCell>
