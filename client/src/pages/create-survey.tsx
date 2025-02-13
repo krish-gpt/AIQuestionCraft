@@ -5,7 +5,7 @@ import { insertSurveySchema } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 import {
   Form,
   FormControl,
@@ -36,7 +36,7 @@ import {
   Droppable,
   Draggable,
 } from "@hello-pangea/dnd";
-import { Loader2, GripVertical, Wand2, Plus, Trash2 } from "lucide-react";
+import { Loader2, GripVertical, Wand2, Plus, Trash2, ArrowLeft } from "lucide-react";
 
 export default function CreateSurvey() {
   const [, navigate] = useLocation();
@@ -127,11 +127,18 @@ export default function CreateSurvey() {
       <Form {...form}>
         <form onSubmit={form.handleSubmit((data) => createSurveyMutation.mutate(data))}>
           <div className="space-y-8">
-            <div>
-              <h1 className="text-3xl font-bold mb-2">Create Survey</h1>
-              <p className="text-muted-foreground">
-                Design your survey or let AI help you generate questions
-              </p>
+            <div className="flex items-center space-x-4">
+              <Button variant="ghost" size="icon" asChild>
+                <Link href="/">
+                  <ArrowLeft className="h-5 w-5" />
+                </Link>
+              </Button>
+              <div>
+                <h1 className="text-3xl font-bold mb-2">Create Survey</h1>
+                <p className="text-muted-foreground">
+                  Design your survey or let AI help you generate questions
+                </p>
+              </div>
             </div>
 
             <Card>
