@@ -29,10 +29,10 @@ async function comparePasswords(supplied: string, stored: string) {
 }
 
 export function setupAuth(app: Express) {
-  // Using REPL_ID as session secret since it's unique per repl and persists across restarts
-  const sessionSecret = process.env.REPL_ID;
+  // Using SESSION_SECRET instead of REPL_ID
+  const sessionSecret = process.env.SESSION_SECRET;
   if (!sessionSecret) {
-    throw new Error("REPL_ID environment variable is required for session security");
+    throw new Error("SESSION_SECRET environment variable is required for session security");
   }
 
   const sessionSettings: session.SessionOptions = {
