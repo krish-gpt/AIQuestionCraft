@@ -18,7 +18,7 @@ export function registerRoutes(app: Express): Server {
     // Check authentication
     if (!req.isAuthenticated()) {
       console.log("Authentication failed for /api/generate-questions");
-      return res.sendStatus(401);
+      return res.status(401).json({ message: "Unauthorized" });
     }
 
     const { topic, count = 5 } = req.body;
@@ -29,7 +29,7 @@ export function registerRoutes(app: Express): Server {
     try {
       const questions = await generateSurveyQuestions(topic, count);
       res.json(questions);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Question generation error:", error);
       res.status(500).json({ 
         message: "Failed to generate questions",

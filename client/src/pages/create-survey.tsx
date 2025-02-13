@@ -6,6 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useLocation, Link } from "wouter";
+import { useAuth } from "@/hooks/use-auth"; // Import useAuth hook
 import {
   Form,
   FormControl,
@@ -42,6 +43,7 @@ export default function CreateSurvey() {
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const [isGenerating, setIsGenerating] = useState(false);
+  const { user } = useAuth(); // Add useAuth hook to check authentication state
 
   const form = useForm({
     resolver: zodResolver(insertSurveySchema),
@@ -67,6 +69,16 @@ export default function CreateSurvey() {
   });
 
   const generateQuestions = async () => {
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "Please log in to generate questions",
+        variant: "destructive",
+      });
+      navigate("/auth");
+      return;
+    }
+
     if (!form.getValues("title")) {
       toast({
         title: "Title required",
@@ -90,6 +102,7 @@ export default function CreateSurvey() {
       const questions = await res.json();
       form.setValue("questions", questions);
     } catch (error) {
+      console.error("Generation error:", error);
       toast({
         title: "Generation failed",
         description: error instanceof Error ? error.message : "Failed to generate questions",

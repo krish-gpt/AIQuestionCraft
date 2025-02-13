@@ -21,10 +21,16 @@ export async function generateSurveyQuestions(topic: string, count: number = 5) 
       response_format: { type: "json_object" },
     });
 
-    const result = JSON.parse(response.choices[0].message.content);
+    const content = response.choices[0].message.content;
+    if (!content) {
+      throw new Error("No content received from OpenAI");
+    }
+
+    const result = JSON.parse(content);
     return result.questions;
-  } catch (error) {
-    throw new Error("Failed to generate questions: " + error.message);
+  } catch (error: any) {
+    console.error("OpenAI API Error:", error);
+    throw new Error(`Failed to generate questions: ${error?.message || 'Unknown error'}`);
   }
 }
 
@@ -58,15 +64,21 @@ export async function analyzeSentiment(text: string): Promise<SentimentAnalysis>
       response_format: { type: "json_object" },
     });
 
-    const result = JSON.parse(response.choices[0].message.content);
+    const content = response.choices[0].message.content;
+    if (!content) {
+      throw new Error("No content received from OpenAI");
+    }
+
+    const result = JSON.parse(content);
     return {
       rating: Math.max(1, Math.min(5, Math.round(result.rating))),
       confidence: Math.max(0, Math.min(1, result.confidence)),
       aspects: result.aspects,
       summary: result.summary,
     };
-  } catch (error) {
-    throw new Error("Failed to analyze sentiment: " + error.message);
+  } catch (error: any) {
+    console.error("OpenAI API Error:", error);
+    throw new Error(`Failed to analyze sentiment: ${error?.message || 'Unknown error'}`);
   }
 }
 
@@ -98,8 +110,14 @@ export async function analyzeTrends(responses: any[]): Promise<TrendAnalysis> {
       response_format: { type: "json_object" },
     });
 
-    return JSON.parse(response.choices[0].message.content);
-  } catch (error) {
-    throw new Error("Failed to analyze trends: " + error.message);
+    const content = response.choices[0].message.content;
+    if (!content) {
+      throw new Error("No content received from OpenAI");
+    }
+
+    return JSON.parse(content);
+  } catch (error: any) {
+    console.error("OpenAI API Error:", error);
+    throw new Error(`Failed to analyze trends: ${error?.message || 'Unknown error'}`);
   }
 }
