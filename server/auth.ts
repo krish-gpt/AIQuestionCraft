@@ -41,9 +41,10 @@ export function setupAuth(app: Express) {
     saveUninitialized: false,
     store: storage.sessionStore,
     cookie: {
-      secure: app.get("env") === "production",
+      secure: false, // Changed to false for development
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
       httpOnly: true,
+      sameSite: 'lax' // Added for better development compatibility
     },
     name: 'sessionId' // Using a generic name for security
   };

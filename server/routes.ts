@@ -10,6 +10,10 @@ export function registerRoutes(app: Express): Server {
 
   // AI routes
   app.post("/api/generate-questions", async (req, res) => {
+    // Add debug logging
+    console.log("Authentication status:", req.isAuthenticated());
+    console.log("Session:", req.session);
+
     // Check authentication
     if (!req.isAuthenticated()) {
       console.log("Authentication failed for /api/generate-questions");
