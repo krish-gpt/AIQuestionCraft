@@ -13,6 +13,7 @@ export function registerRoutes(app: Express): Server {
     // Add debug logging
     console.log("Authentication status:", req.isAuthenticated());
     console.log("Session:", req.session);
+    console.log("User:", req.user);
 
     // Check authentication
     if (!req.isAuthenticated()) {
