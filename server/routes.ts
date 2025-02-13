@@ -38,16 +38,25 @@ export function registerRoutes(app: Express): Server {
 
   // AI routes
   app.post("/api/generate-questions", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
+    // Check authentication and user existence
+    if (!req.isAuthenticated() || !req.user?.id) {
+      return res.sendStatus(401);
+    }
 
     const { topic, count = 5 } = req.body;
-    if (!topic) return res.status(400).send("Topic is required");
+    if (!topic) {
+      return res.status(400).json({ message: "Topic is required" });
+    }
 
     try {
       const questions = await generateSurveyQuestions(topic, count);
       res.json(questions);
-    } catch (err) {
-      res.status(500).send(err.message);
+    } catch (error) {
+      console.error("Question generation error:", error);
+      res.status(500).json({ 
+        message: "Failed to generate questions",
+        error: error instanceof Error ? error.message : "Unknown error"
+      });
     }
   });
 
