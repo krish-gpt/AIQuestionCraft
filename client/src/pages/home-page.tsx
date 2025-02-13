@@ -20,9 +20,11 @@ import {
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Plus, BarChart3, Share2, ClipboardList, LogOut } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 export default function HomePage() {
   const { user, logoutMutation } = useAuth();
+  const { toast } = useToast();
   const { data: surveys, isLoading } = useQuery<Survey[]>({
     queryKey: ["/api/surveys"],
   });
@@ -42,8 +44,8 @@ export default function HomePage() {
                 </p>
               </div>
             </div>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => logoutMutation.mutate()}
               disabled={logoutMutation.isPending}
             >
@@ -145,6 +147,10 @@ export default function HomePage() {
                           onClick={() => {
                             const url = `${window.location.origin}/survey/${survey.id}`;
                             navigator.clipboard.writeText(url);
+                            toast({
+                              title: "Link copied",
+                              description: "Survey link copied to clipboard",
+                            });
                           }}
                           className="inline-flex items-center"
                         >
