@@ -8,6 +8,31 @@ import { insertSurveySchema, insertResponseSchema } from "@shared/schema";
 export function registerRoutes(app: Express): Server {
   setupAuth(app);
 
+  // AI routes
+  app.post("/api/generate-questions", async (req, res) => {
+    // Check authentication
+    if (!req.isAuthenticated()) {
+      console.log("Authentication failed for /api/generate-questions");
+      return res.sendStatus(401);
+    }
+
+    const { topic, count = 5 } = req.body;
+    if (!topic) {
+      return res.status(400).json({ message: "Topic is required" });
+    }
+
+    try {
+      const questions = await generateSurveyQuestions(topic, count);
+      res.json(questions);
+    } catch (error) {
+      console.error("Question generation error:", error);
+      res.status(500).json({ 
+        message: "Failed to generate questions",
+        error: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
   // Survey routes
   app.post("/api/surveys", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
@@ -31,33 +56,9 @@ export function registerRoutes(app: Express): Server {
   });
 
   app.get("/api/surveys/:id", async (req, res) => {
-    const survey = await storage.getSurvey(Number(req.params.id)); //Corrected to req.params.id
+    const survey = await storage.getSurvey(Number(req.params.id));
     if (!survey) return res.sendStatus(404);
     res.json(survey);
-  });
-
-  // AI routes
-  app.post("/api/generate-questions", async (req, res) => {
-    // Check authentication and user existence
-    if (!req.isAuthenticated() || !req.user?.id) {
-      return res.sendStatus(401);
-    }
-
-    const { topic, count = 5 } = req.body;
-    if (!topic) {
-      return res.status(400).json({ message: "Topic is required" });
-    }
-
-    try {
-      const questions = await generateSurveyQuestions(topic, count);
-      res.json(questions);
-    } catch (error) {
-      console.error("Question generation error:", error);
-      res.status(500).json({ 
-        message: "Failed to generate questions",
-        error: error instanceof Error ? error.message : "Unknown error"
-      });
-    }
   });
 
   // Response routes
@@ -85,7 +86,6 @@ export function registerRoutes(app: Express): Server {
       try {
         const sentiment = await analyzeSentiment(textAnswers);
         response.sentiment = sentiment;
-        // Note: In a real app, we'd update the response in storage here
       } catch (err) {
         console.error("Sentiment analysis error:", err);
       }
@@ -147,7 +147,6 @@ export function registerRoutes(app: Express): Server {
       res.status(500).json({ message: "Failed to generate insights" });
     }
   });
-
 
   const httpServer = createServer(app);
   return httpServer;

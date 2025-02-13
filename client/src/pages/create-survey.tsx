@@ -17,7 +17,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { 
+import {
   Card,
   CardContent,
   CardDescription,
@@ -83,12 +83,16 @@ export default function CreateSurvey() {
         "/api/generate-questions",
         { topic: form.getValues("title") }
       );
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || "Failed to generate questions");
+      }
       const questions = await res.json();
       form.setValue("questions", questions);
     } catch (error) {
       toast({
         title: "Generation failed",
-        description: error.message,
+        description: error instanceof Error ? error.message : "Failed to generate questions",
         variant: "destructive",
       });
     } finally {
