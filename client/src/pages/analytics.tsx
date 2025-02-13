@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Survey, Response } from "@shared/schema";
@@ -30,10 +31,41 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
+  LineChart,
+  Line,
 } from "recharts";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
-import { Share2, Loader2 } from "lucide-react";
+import { Share2, Loader2, TrendingUp, MessageSquare, Brain } from "lucide-react";
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+} from "@/components/ui/alert";
+
+interface InsightData {
+  sentiment_analysis: {
+    rating: number;
+    confidence: number;
+    aspects: {
+      category: string;
+      sentiment: 'positive' | 'negative' | 'neutral';
+      score: number;
+      key_phrases: string[];
+    }[];
+    summary: string;
+  }[];
+  trends: {
+    overall_trends: {
+      topic: string;
+      trend: 'increasing' | 'decreasing' | 'stable';
+      significance: number;
+      supporting_evidence: string[];
+    }[];
+    key_insights: string[];
+    recommendations: string[];
+  };
+}
 
 export default function Analytics({ params }: { params: { id: string } }) {
   const { toast } = useToast();
@@ -47,7 +79,12 @@ export default function Analytics({ params }: { params: { id: string } }) {
     queryKey: [`/api/surveys/${surveyId}/responses`],
   });
 
-  if (surveyLoading || responsesLoading) {
+  const { data: insights, isLoading: insightsLoading } = useQuery<InsightData>({
+    queryKey: [`/api/surveys/${surveyId}/insights`],
+    enabled: responses ? responses.length > 0 : false,
+  });
+
+  if (surveyLoading || responsesLoading || insightsLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-8 w-8 animate-spin text-border" />
@@ -103,6 +140,28 @@ export default function Analytics({ params }: { params: { id: string } }) {
     }
 
     return [];
+  };
+
+  const getSentimentColor = (sentiment: string) => {
+    switch (sentiment) {
+      case 'positive':
+        return 'bg-green-100 text-green-800';
+      case 'negative':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getTrendIcon = (trend: string) => {
+    switch (trend) {
+      case 'increasing':
+        return '↗';
+      case 'decreasing':
+        return '↘';
+      default:
+        return '→';
+    }
   };
 
   const averageSentiment = responses?.reduce((sum, response) => {
@@ -174,11 +233,156 @@ export default function Analytics({ params }: { params: { id: string } }) {
         </Card>
       </div>
 
-      <Tabs defaultValue="charts">
+      <Tabs defaultValue="insights">
         <TabsList>
-          <TabsTrigger value="charts">Charts</TabsTrigger>
-          <TabsTrigger value="responses">Individual Responses</TabsTrigger>
+          <TabsTrigger value="insights">
+            <Brain className="w-4 h-4 mr-2" />
+            AI Insights
+          </TabsTrigger>
+          <TabsTrigger value="charts">
+            <TrendingUp className="w-4 h-4 mr-2" />
+            Charts
+          </TabsTrigger>
+          <TabsTrigger value="responses">
+            <MessageSquare className="w-4 h-4 mr-2" />
+            Individual Responses
+          </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="insights" className="space-y-8">
+          {insights ? (
+            <>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Sentiment Analysis</CardTitle>
+                  <CardDescription>
+                    AI-powered analysis of text responses
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {insights.sentiment_analysis.map((analysis, idx) => (
+                    <div key={idx} className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium">Response {idx + 1}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {analysis.summary}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-2xl font-bold">{analysis.rating}/5</p>
+                          <p className="text-sm text-muted-foreground">
+                            {(analysis.confidence * 100).toFixed(0)}% confidence
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
+                        {analysis.aspects.map((aspect, aspectIdx) => (
+                          <div
+                            key={aspectIdx}
+                            className="border rounded-lg p-4 space-y-2"
+                          >
+                            <div className="flex items-center justify-between">
+                              <p className="font-medium">{aspect.category}</p>
+                              <span
+                                className={`px-2 py-1 rounded-full text-xs ${getSentimentColor(
+                                  aspect.sentiment
+                                )}`}
+                              >
+                                {aspect.sentiment}
+                              </span>
+                            </div>
+                            <div className="space-y-1">
+                              {aspect.key_phrases.map((phrase, phraseIdx) => (
+                                <p
+                                  key={phraseIdx}
+                                  className="text-sm text-muted-foreground"
+                                >
+                                  • {phrase}
+                                </p>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Trends Analysis</CardTitle>
+                  <CardDescription>
+                    Key trends and patterns identified in responses
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
+                    {insights.trends.overall_trends.map((trend, idx) => (
+                      <div
+                        key={idx}
+                        className="border rounded-lg p-4 space-y-2"
+                      >
+                        <div className="flex items-center justify-between">
+                          <p className="font-medium">{trend.topic}</p>
+                          <span className="text-lg">
+                            {getTrendIcon(trend.trend)}
+                          </span>
+                        </div>
+                        <div className="space-y-1">
+                          {trend.supporting_evidence.map((evidence, evidenceIdx) => (
+                            <p
+                              key={evidenceIdx}
+                              className="text-sm text-muted-foreground"
+                            >
+                              • {evidence}
+                            </p>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div>
+                    <h3 className="text-lg font-semibold mb-2">Key Insights</h3>
+                    <div className="space-y-2">
+                      {insights.trends.key_insights.map((insight, idx) => (
+                        <Alert key={idx}>
+                          <AlertTitle>Insight {idx + 1}</AlertTitle>
+                          <AlertDescription>{insight}</AlertDescription>
+                        </Alert>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <h3 className="text-lg font-semibold mb-2">
+                      Recommendations
+                    </h3>
+                    <div className="space-y-2">
+                      {insights.trends.recommendations.map((rec, idx) => (
+                        <Alert key={idx}>
+                          <AlertTitle>Recommendation {idx + 1}</AlertTitle>
+                          <AlertDescription>{rec}</AlertDescription>
+                        </Alert>
+                      ))}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </>
+          ) : (
+            <Card>
+              <CardContent className="py-8">
+                <div className="text-center text-muted-foreground">
+                  No responses yet to generate insights.
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
 
         <TabsContent value="charts" className="space-y-8">
           {survey.questions
