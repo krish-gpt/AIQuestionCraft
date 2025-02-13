@@ -1,10 +1,14 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { setupAuth } from "./auth";
 
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+// Setup authentication before any routes
+setupAuth(app);
 
 // Add detailed request logging middleware
 app.use((req, res, next) => {
@@ -21,7 +25,7 @@ app.use((req, res, next) => {
 
   // Log authentication details for debugging
   if (path.startsWith("/api")) {
-    log(`Request ${path} - Auth: ${req.isAuthenticated()} - Session: ${JSON.stringify(req.session)}`);
+    log(`Request ${path} - Auth: ${req.isAuthenticated?.() || false} - Session: ${JSON.stringify(req.session)}`);
   }
 
   res.on("finish", () => {

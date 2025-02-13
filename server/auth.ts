@@ -71,12 +71,10 @@ export function setupAuth(app: Express) {
     }),
   );
 
-  // Serialize just the user ID for the session
   passport.serializeUser((user, done) => {
     done(null, user.id);
   });
 
-  // Deserialize by fetching the user from the database
   passport.deserializeUser(async (id: number, done) => {
     try {
       const user = await storage.getUser(id);
