@@ -17,7 +17,10 @@ function Router() {
       <Route path="/auth" component={AuthPage} />
       <ProtectedRoute path="/" component={HomePage} />
       <ProtectedRoute path="/create" component={CreateSurvey} />
-      <ProtectedRoute path="/analytics/:id" component={Analytics} />
+      <ProtectedRoute 
+        path="/analytics/:id" 
+        component={({ params }) => <Analytics id={params.id} />} 
+      />
       <Route path="/survey/:id" component={Survey} />
       <Route component={NotFound} />
     </Switch>
