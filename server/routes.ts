@@ -3,19 +3,13 @@ import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
 import { generateSurveyQuestions, analyzeSentiment, analyzeTrends } from "./openai";
-import { insertSurveySchema, insertResponseSchema } from "@shared/schema";
+import { insertSurveySchema, insertResponseSchema, type Survey, type Response } from "@shared/schema";
 
 export function registerRoutes(app: Express): Server {
   setupAuth(app);
 
   // AI routes
   app.post("/api/generate-questions", async (req, res) => {
-    // Add debug logging
-    console.log("Authentication status:", req.isAuthenticated());
-    console.log("Session:", req.session);
-    console.log("User:", req.user);
-
-    // Check authentication
     if (!req.isAuthenticated()) {
       console.log("Authentication failed for /api/generate-questions");
       return res.status(401).json({ message: "Unauthorized" });
@@ -49,14 +43,14 @@ export function registerRoutes(app: Express): Server {
 
     const survey = await storage.createSurvey({
       ...parseResult.data,
-      userId: req.user.id,
+      userId: req.user!.id,
     });
     res.status(201).json(survey);
   });
 
   app.get("/api/surveys", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
-    const surveys = await storage.getSurveysByUser(req.user.id);
+    const surveys = await storage.getSurveysByUser(req.user!.id);
     res.json(surveys);
   });
 
@@ -68,7 +62,7 @@ export function registerRoutes(app: Express): Server {
 
   // Response routes
   app.post("/api/surveys/:id/responses", async (req, res) => {
-    const survey = await storage.getSurvey(Number(req.params.id));
+    const survey = await storage.getSurvey(Number(req.params.id)) as Survey;
     if (!survey) return res.sendStatus(404);
 
     const parseResult = insertResponseSchema.safeParse(req.body);
@@ -76,20 +70,22 @@ export function registerRoutes(app: Express): Server {
       return res.status(400).json(parseResult.error);
     }
 
-    const response = await storage.createResponse(parseResult.data);
+    const response = await storage.createResponse(parseResult.data) as Response;
 
     // Analyze sentiment for text responses
-    const textAnswers = Object.entries(response.answers)
+    const textAnswers = Object.entries(response.answers as Record<string, string>)
       .filter(([id]) => {
-        const question = survey.questions.find(q => q.id === id);
+        const question = (survey.questions as Array<{id: string, type: string}>)
+          .find(q => q.id === id);
         return question?.type === "text";
       })
-      .map(([, answer]) => answer as string)
+      .map(([, answer]) => answer)
       .join(" ");
 
     if (textAnswers) {
       try {
         const sentiment = await analyzeSentiment(textAnswers);
+        await storage.updateResponseSentiment(response.id, sentiment);
         response.sentiment = sentiment;
       } catch (err) {
         console.error("Sentiment analysis error:", err);
@@ -102,9 +98,9 @@ export function registerRoutes(app: Express): Server {
   app.get("/api/surveys/:id/responses", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
 
-    const survey = await storage.getSurvey(Number(req.params.id));
+    const survey = await storage.getSurvey(Number(req.params.id)) as Survey;
     if (!survey) return res.sendStatus(404);
-    if (survey.userId !== req.user.id) return res.sendStatus(403);
+    if (survey.userId !== req.user!.id) return res.sendStatus(403);
 
     const responses = await storage.getResponsesBySurvey(survey.id);
     res.json(responses);
@@ -114,11 +110,11 @@ export function registerRoutes(app: Express): Server {
   app.get("/api/surveys/:id/insights", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
 
-    const survey = await storage.getSurvey(Number(req.params.id));
+    const survey = await storage.getSurvey(Number(req.params.id)) as Survey;
     if (!survey) return res.sendStatus(404);
-    if (survey.userId !== req.user.id) return res.sendStatus(403);
+    if (survey.userId !== req.user!.id) return res.sendStatus(403);
 
-    const responses = await storage.getResponsesBySurvey(survey.id);
+    const responses = await storage.getResponsesBySurvey(survey.id) as Response[];
     if (!responses.length) {
       return res.status(400).json({ message: "No responses to analyze" });
     }
@@ -127,12 +123,13 @@ export function registerRoutes(app: Express): Server {
       // Analyze text responses for sentiment
       const textAnalyses = await Promise.all(
         responses.map(async (response) => {
-          const textAnswers = Object.entries(response.answers)
+          const textAnswers = Object.entries(response.answers as Record<string, string>)
             .filter(([id]) => {
-              const question = survey.questions.find(q => q.id === id);
+              const question = (survey.questions as Array<{id: string, type: string}>)
+                .find(q => q.id === id);
               return question?.type === "text";
             })
-            .map(([, answer]) => answer as string)
+            .map(([, answer]) => answer)
             .join(" ");
 
           if (!textAnswers) return null;
