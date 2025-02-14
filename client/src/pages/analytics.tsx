@@ -80,20 +80,38 @@ interface ExtendedSurvey extends Survey {
 
 export default function Analytics({ params }: { params: { id: string } }) {
   const { toast } = useToast();
-  const surveyId = parseInt(params.id);
+  const surveyId = params?.id ? parseInt(params.id) : null;
 
   const { data: survey, isLoading: surveyLoading } = useQuery<ExtendedSurvey>({
     queryKey: [`/api/surveys/${surveyId}`],
+    enabled: !!surveyId,
   });
 
   const { data: responses, isLoading: responsesLoading } = useQuery<Response[]>({
     queryKey: [`/api/surveys/${surveyId}/responses`],
+    enabled: !!surveyId,
   });
 
   const { data: insights, isLoading: insightsLoading } = useQuery<InsightData>({
     queryKey: [`/api/surveys/${surveyId}/insights`],
-    enabled: responses ? responses.length > 0 : false,
+    enabled: !!surveyId && responses ? responses.length > 0 : false,
   });
+
+  // If no valid survey ID, show error
+  if (!surveyId) {
+    return (
+      <div className="container max-w-6xl py-8">
+        <Card>
+          <CardHeader>
+            <CardTitle>Invalid Survey</CardTitle>
+            <CardDescription>
+              No valid survey ID provided.
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
+    );
+  }
 
   if (surveyLoading || responsesLoading || insightsLoading) {
     return (
