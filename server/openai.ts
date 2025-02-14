@@ -1,4 +1,5 @@
 import OpenAI from "openai";
+import crypto from 'crypto';
 
 // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -11,11 +12,11 @@ export async function generateSurveyQuestions(topic: string, count: number = 5) 
         {
           role: "system",
           content: 
-            "You are a survey design expert. Generate survey questions that are clear, unbiased, and effective at gathering insights. Include a mix of multiple choice and open-ended questions. Format response as JSON array of questions.",
+            "You are a survey design expert. Generate survey questions that are clear, unbiased, and effective at gathering insights. Include a mix of multiple choice and open-ended questions. Each question should have these exact properties: 'id' (string), 'text' (string), 'type' (multiple_choice/text/rating), and 'options' (array of strings, only for multiple_choice type). Format response as JSON array of questions.",
         },
         {
           role: "user",
-          content: `Generate ${count} survey questions about ${topic}. Include question text, type (multiple_choice/text/rating), and options for multiple choice questions.`,
+          content: `Generate ${count} survey questions about ${topic}. Return an array of questions with properties: id, text, type (multiple_choice/text/rating), and options for multiple choice questions.`,
         },
       ],
       response_format: { type: "json_object" },
@@ -27,7 +28,10 @@ export async function generateSurveyQuestions(topic: string, count: number = 5) 
     }
 
     const result = JSON.parse(content);
-    return result.questions;
+    return result.questions.map((q: any) => ({
+      ...q,
+      id: crypto.randomUUID(), // Generate unique ID for each question
+    }));
   } catch (error: any) {
     console.error("OpenAI API Error:", error);
     throw new Error(`Failed to generate questions: ${error?.message || 'Unknown error'}`);
