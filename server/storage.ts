@@ -20,6 +20,7 @@ export interface IStorage {
 
   createResponse(response: InsertResponse): Promise<Response>;
   getResponsesBySurvey(surveyId: number): Promise<Response[]>;
+  updateResponseSentiment(responseId: number, sentiment: any): Promise<void>;
 
   sessionStore: session.Store;
 }
@@ -84,6 +85,13 @@ export class DatabaseStorage implements IStorage {
 
   async getResponsesBySurvey(surveyId: number): Promise<Response[]> {
     return db.select().from(responses).where(eq(responses.surveyId, surveyId));
+  }
+
+  async updateResponseSentiment(responseId: number, sentiment: any): Promise<void> {
+    await db
+      .update(responses)
+      .set({ sentiment })
+      .where(eq(responses.id, responseId));
   }
 }
 
