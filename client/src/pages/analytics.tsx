@@ -135,67 +135,6 @@ export default function Analytics({ params }: { params: { id: string } }) {
     );
   }
 
-  const getQuestionStats = (questionId: string) => {
-    if (!responses || !survey) return [];
-
-    const question = survey.questions.find((q) => q.id === questionId);
-    if (!question) return [];
-
-    if (question.type === "multiple_choice") {
-      const counts = responses.reduce((acc, response) => {
-        const answer = response.answers[questionId];
-        if (answer) {
-          acc[answer] = (acc[answer] || 0) + 1;
-        }
-        return acc;
-      }, {} as Record<string, number>);
-
-      return Object.entries(counts).map(([name, value]) => ({
-        name,
-        value,
-      }));
-    }
-
-    if (question.type === "rating") {
-      const counts = responses.reduce((acc, response) => {
-        const answer = response.answers[questionId];
-        if (answer) {
-          acc[answer] = (acc[answer] || 0) + 1;
-        }
-        return acc;
-      }, {} as Record<string, number>);
-
-      return [1, 2, 3, 4, 5].map((rating) => ({
-        name: rating.toString(),
-        value: counts[rating.toString()] || 0,
-      }));
-    }
-
-    return [];
-  };
-
-  const getSentimentColor = (sentiment: string) => {
-    switch (sentiment) {
-      case 'positive':
-        return 'bg-green-100 text-green-800';
-      case 'negative':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getTrendIcon = (trend: string) => {
-    switch (trend) {
-      case 'increasing':
-        return '↗';
-      case 'decreasing':
-        return '↘';
-      default:
-        return '→';
-    }
-  };
-
   const averageSentiment = responses?.reduce((sum, response) => {
     return sum + ((response.sentiment?.rating as number) || 0);
   }, 0) / (responses?.length || 1);
@@ -287,7 +226,7 @@ export default function Analytics({ params }: { params: { id: string } }) {
         </TabsList>
 
         <TabsContent value="insights" className="space-y-8">
-          {insights ? (
+          {insights && insights.trends && insights.trends.overall_trends ? (
             <>
               <Card>
                 <CardHeader>
@@ -297,7 +236,7 @@ export default function Analytics({ params }: { params: { id: string } }) {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  {insights.sentiment_analysis.map((analysis, idx) => (
+                  {insights.sentiment_analysis?.map((analysis, idx) => (
                     <div key={idx} className="space-y-4">
                       <div className="flex items-center justify-between">
                         <div>
@@ -382,31 +321,35 @@ export default function Analytics({ params }: { params: { id: string } }) {
                     ))}
                   </div>
 
-                  <div>
-                    <h3 className="text-lg font-semibold mb-2">Key Insights</h3>
-                    <div className="space-y-2">
-                      {insights.trends.key_insights.map((insight, idx) => (
-                        <Alert key={idx}>
-                          <AlertTitle>Insight {idx + 1}</AlertTitle>
-                          <AlertDescription>{insight}</AlertDescription>
-                        </Alert>
-                      ))}
+                  {insights.trends.key_insights && insights.trends.key_insights.length > 0 && (
+                    <div>
+                      <h3 className="text-lg font-semibold mb-2">Key Insights</h3>
+                      <div className="space-y-2">
+                        {insights.trends.key_insights.map((insight, idx) => (
+                          <Alert key={idx}>
+                            <AlertTitle>Insight {idx + 1}</AlertTitle>
+                            <AlertDescription>{insight}</AlertDescription>
+                          </Alert>
+                        ))}
+                      </div>
                     </div>
-                  </div>
+                  )}
 
-                  <div>
-                    <h3 className="text-lg font-semibold mb-2">
-                      Recommendations
-                    </h3>
-                    <div className="space-y-2">
-                      {insights.trends.recommendations.map((rec, idx) => (
-                        <Alert key={idx}>
-                          <AlertTitle>Recommendation {idx + 1}</AlertTitle>
-                          <AlertDescription>{rec}</AlertDescription>
-                        </Alert>
-                      ))}
+                  {insights.trends.recommendations && insights.trends.recommendations.length > 0 && (
+                    <div>
+                      <h3 className="text-lg font-semibold mb-2">
+                        Recommendations
+                      </h3>
+                      <div className="space-y-2">
+                        {insights.trends.recommendations.map((rec, idx) => (
+                          <Alert key={idx}>
+                            <AlertTitle>Recommendation {idx + 1}</AlertTitle>
+                            <AlertDescription>{rec}</AlertDescription>
+                          </Alert>
+                        ))}
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </CardContent>
               </Card>
             </>
@@ -495,3 +438,64 @@ export default function Analytics({ params }: { params: { id: string } }) {
     </div>
   );
 }
+
+const getQuestionStats = (questionId: string) => {
+  if (!responses || !survey) return [];
+
+  const question = survey.questions.find((q) => q.id === questionId);
+  if (!question) return [];
+
+  if (question.type === "multiple_choice") {
+    const counts = responses.reduce((acc, response) => {
+      const answer = response.answers[questionId];
+      if (answer) {
+        acc[answer] = (acc[answer] || 0) + 1;
+      }
+      return acc;
+    }, {} as Record<string, number>);
+
+    return Object.entries(counts).map(([name, value]) => ({
+      name,
+      value,
+    }));
+  }
+
+  if (question.type === "rating") {
+    const counts = responses.reduce((acc, response) => {
+      const answer = response.answers[questionId];
+      if (answer) {
+        acc[answer] = (acc[answer] || 0) + 1;
+      }
+      return acc;
+    }, {} as Record<string, number>);
+
+    return [1, 2, 3, 4, 5].map((rating) => ({
+      name: rating.toString(),
+      value: counts[rating.toString()] || 0,
+    }));
+  }
+
+  return [];
+};
+
+const getSentimentColor = (sentiment: string) => {
+  switch (sentiment) {
+    case 'positive':
+      return 'bg-green-100 text-green-800';
+    case 'negative':
+      return 'bg-red-100 text-red-800';
+    default:
+      return 'bg-gray-100 text-gray-800';
+  }
+};
+
+const getTrendIcon = (trend: string) => {
+  switch (trend) {
+    case 'increasing':
+      return '↗';
+    case 'decreasing':
+      return '↘';
+    default:
+      return '→';
+  }
+};
