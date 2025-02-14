@@ -69,7 +69,25 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container max-w-6xl py-8">
+      <div className="container max-w-6xl py-8 relative">
+        {/* Sign Out Button */}
+        <div className="absolute top-0 right-0">
+          <Button
+            variant="outline"
+            onClick={() => logoutMutation.mutate()}
+            disabled={logoutMutation.isPending}
+          >
+            {logoutMutation.isPending ? (
+              "Logging out..."
+            ) : (
+              <>
+                <LogOut className="mr-2 h-4 w-4" />
+                Sign Out
+              </>
+            )}
+          </Button>
+        </div>
+
         {/* Hero Section */}
         <div className="mb-8 text-center">
           <div className="flex flex-col items-center justify-center mb-4">
@@ -80,20 +98,6 @@ export default function HomePage() {
                 Hello, {user?.username}!
               </p>
             </div>
-            <Button
-              variant="outline"
-              onClick={() => logoutMutation.mutate()}
-              disabled={logoutMutation.isPending}
-            >
-              {logoutMutation.isPending ? (
-                "Logging out..."
-              ) : (
-                <>
-                  <LogOut className="mr-2 h-4 w-4" />
-                  Sign Out
-                </>
-              )}
-            </Button>
           </div>
           <p className="text-xl text-muted-foreground mb-6">
             Create and analyze surveys with AI-powered insights.
@@ -208,7 +212,7 @@ export default function HomePage() {
                             <AlertDialogHeader>
                               <AlertDialogTitle>Delete Survey</AlertDialogTitle>
                               <AlertDialogDescription>
-                                Are you sure you want to delete this survey? This action cannot be undone 
+                                Are you sure you want to delete this survey? This action cannot be undone
                                 and all responses will be permanently deleted.
                               </AlertDialogDescription>
                             </AlertDialogHeader>
