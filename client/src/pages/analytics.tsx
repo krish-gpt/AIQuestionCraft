@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Survey, Response } from "@shared/schema";
 import { Link } from "wouter";
@@ -79,6 +79,7 @@ interface ExtendedSurvey extends Survey {
 
 export default function Analytics({ params }: { params: { id: string } }) {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const surveyId = params?.id ? parseInt(params.id) : null;
 
   const { data: survey, isLoading: surveyLoading } = useQuery<ExtendedSurvey>({
@@ -94,6 +95,33 @@ export default function Analytics({ params }: { params: { id: string } }) {
   const { data: insights, isLoading: insightsLoading } = useQuery<InsightData>({
     queryKey: [`/api/surveys/${surveyId}/insights`],
     enabled: !!surveyId && responses ? responses.length > 0 : false,
+  });
+
+  const generateInsightsMutation = useMutation({
+    mutationFn: async () => {
+      if (!surveyId) return;
+      const res = await fetch(`/api/surveys/${surveyId}/insights`, {
+        method: 'POST',
+      });
+      if (!res.ok) {
+        throw new Error('Failed to generate insights');
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/surveys/${surveyId}/insights`] });
+      toast({
+        title: "Success",
+        description: "AI insights have been generated successfully.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to generate insights",
+        variant: "destructive",
+      });
+    },
   });
 
   const getQuestionStats = (questionId: string) => {
@@ -287,8 +315,64 @@ export default function Analytics({ params }: { params: { id: string } }) {
         </TabsList>
 
         <TabsContent value="insights" className="space-y-8">
-          {insights && insights.trends && insights.trends.overall_trends ? (
+          {!responses?.length ? (
+            <Card>
+              <CardContent className="py-8">
+                <div className="text-center text-muted-foreground">
+                  No responses yet to generate insights.
+                </div>
+              </CardContent>
+            </Card>
+          ) : !insights ? (
+            <Card>
+              <CardContent className="py-8">
+                <div className="text-center space-y-4">
+                  <Brain className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-semibold">No AI Insights Generated Yet</h3>
+                  <p className="text-muted-foreground mb-4">
+                    Generate AI-powered insights from your survey responses to understand trends and sentiment.
+                  </p>
+                  <Button
+                    onClick={() => generateInsightsMutation.mutate()}
+                    disabled={generateInsightsMutation.isPending}
+                  >
+                    {generateInsightsMutation.isPending ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Generating Insights...
+                      </>
+                    ) : (
+                      <>
+                        <Brain className="mr-2 h-4 w-4" />
+                        Generate Insights
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
             <>
+              <div className="flex justify-between items-center">
+                <h2 className="text-2xl font-bold">AI Insights</h2>
+                <Button
+                  variant="outline"
+                  onClick={() => generateInsightsMutation.mutate()}
+                  disabled={generateInsightsMutation.isPending}
+                >
+                  {generateInsightsMutation.isPending ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Regenerating...
+                    </>
+                  ) : (
+                    <>
+                      <Brain className="mr-2 h-4 w-4" />
+                      Regenerate Insights
+                    </>
+                  )}
+                </Button>
+              </div>
               <Card>
                 <CardHeader>
                   <CardTitle>Sentiment Analysis</CardTitle>
@@ -414,14 +498,6 @@ export default function Analytics({ params }: { params: { id: string } }) {
                 </CardContent>
               </Card>
             </>
-          ) : (
-            <Card>
-              <CardContent className="py-8">
-                <div className="text-center text-muted-foreground">
-                  No responses yet to generate insights.
-                </div>
-              </CardContent>
-            </Card>
           )}
         </TabsContent>
 

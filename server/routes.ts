@@ -107,7 +107,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Enhanced Analysis routes
-  app.get("/api/surveys/:id/insights", async (req, res) => {
+  app.post("/api/surveys/:id/insights", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
 
     const survey = await storage.getSurvey(Number(req.params.id)) as Survey;
@@ -133,7 +133,9 @@ export function registerRoutes(app: Express): Server {
             .join(" ");
 
           if (!textAnswers) return null;
-          return analyzeSentiment(textAnswers);
+          const sentiment = await analyzeSentiment(textAnswers);
+          await storage.updateResponseSentiment(response.id, sentiment);
+          return sentiment;
         })
       );
 
