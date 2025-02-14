@@ -19,7 +19,7 @@ function Router() {
       <ProtectedRoute path="/create" component={CreateSurvey} />
       <ProtectedRoute 
         path="/analytics/:id" 
-        component={({ params }) => <Analytics id={params.id} />} 
+        component={({ params }) => <Analytics params={params} />} 
       />
       <Route path="/survey/:id" component={Survey} />
       <Route component={NotFound} />
