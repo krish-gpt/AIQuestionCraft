@@ -110,45 +110,64 @@ export function registerRoutes(app: Express): Server {
   app.post("/api/surveys/:id/insights", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
 
-    const survey = await storage.getSurvey(Number(req.params.id)) as Survey;
-    if (!survey) return res.sendStatus(404);
-    if (survey.userId !== req.user!.id) return res.sendStatus(403);
-
-    const responses = await storage.getResponsesBySurvey(survey.id) as Response[];
-    if (!responses.length) {
-      return res.status(400).json({ message: "No responses to analyze" });
-    }
-
     try {
+      const survey = await storage.getSurvey(Number(req.params.id)) as Survey;
+      if (!survey) return res.sendStatus(404);
+      if (survey.userId !== req.user!.id) return res.sendStatus(403);
+
+      const responses = await storage.getResponsesBySurvey(survey.id) as Response[];
+      if (!responses.length) {
+        return res.status(400).json({ message: "No responses to analyze" });
+      }
+
+      console.log(`Processing ${responses.length} responses for sentiment analysis`);
+
       // Analyze text responses for sentiment
       const textAnalyses = await Promise.all(
         responses.map(async (response) => {
-          const textAnswers = Object.entries(response.answers as Record<string, string>)
-            .filter(([id]) => {
-              const question = (survey.questions as Array<{id: string, type: string}>)
-                .find(q => q.id === id);
-              return question?.type === "text";
-            })
-            .map(([, answer]) => answer)
-            .join(" ");
+          try {
+            const textAnswers = Object.entries(response.answers as Record<string, string>)
+              .filter(([id]) => {
+                const question = (survey.questions as Array<{id: string, type: string}>)
+                  .find(q => q.id === id);
+                return question?.type === "text";
+              })
+              .map(([, answer]) => answer)
+              .join(" ");
 
-          if (!textAnswers) return null;
-          const sentiment = await analyzeSentiment(textAnswers);
-          await storage.updateResponseSentiment(response.id, sentiment);
-          return sentiment;
+            if (!textAnswers) {
+              console.log(`No text answers found for response ${response.id}`);
+              return null;
+            }
+
+            console.log(`Analyzing sentiment for response ${response.id}`);
+            const sentiment = await analyzeSentiment(textAnswers);
+            await storage.updateResponseSentiment(response.id, sentiment);
+            return sentiment;
+          } catch (err) {
+            console.error(`Error analyzing response ${response.id}:`, err);
+            return null;
+          }
         })
       );
 
+      console.log('Getting trends analysis');
       // Get overall trends analysis
       const trends = await analyzeTrends(responses);
 
-      res.json({
+      const insights = {
         sentiment_analysis: textAnalyses.filter(Boolean),
         trends,
-      });
+      };
+
+      console.log('Sending insights response');
+      res.json(insights);
     } catch (err) {
       console.error("Analysis error:", err);
-      res.status(500).json({ message: "Failed to generate insights" });
+      res.status(500).json({ 
+        message: "Failed to generate insights",
+        error: err instanceof Error ? err.message : "Unknown error" 
+      });
     }
   });
 
