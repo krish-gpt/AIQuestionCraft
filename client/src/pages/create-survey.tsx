@@ -217,33 +217,33 @@ export default function CreateSurvey() {
   };
 
   return (
-    <div className="container max-w-4xl py-6">
+    <div className="container max-w-5xl py-8">
       <Form {...form}>
         <form onSubmit={form.handleSubmit((data) => createSurveyMutation.mutate(data))}>
-          <div className="space-y-6">
-            <div className="flex items-center space-x-4">
+          <div className="space-y-8">
+            <div className="flex items-center space-x-4 mb-8">
               <Button variant="ghost" size="icon" asChild>
                 <Link href="/">
                   <ArrowLeft className="h-5 w-5" />
                 </Link>
               </Button>
               <div>
-                <h1 className="text-3xl font-bold mb-1">Create Survey</h1>
-                <p className="text-muted-foreground">
+                <h1 className="text-3xl font-bold mb-2">Create Survey</h1>
+                <p className="text-lg text-muted-foreground">
                   Design your survey or let AI help you generate questions
                 </p>
               </div>
             </div>
 
-            <div className="space-y-6">
+            <div className="space-y-8">
               <Card>
-                <CardHeader className="pb-4">
+                <CardHeader>
                   <CardTitle>Survey Details</CardTitle>
                   <CardDescription>
                     Basic information about your survey
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-6">
                   <FormField
                     control={form.control}
                     name="title"
@@ -251,7 +251,7 @@ export default function CreateSurvey() {
                       <FormItem>
                         <FormLabel>Title</FormLabel>
                         <FormControl>
-                          <Input {...field} />
+                          <Input {...field} className="text-lg" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -264,7 +264,7 @@ export default function CreateSurvey() {
                       <FormItem>
                         <FormLabel>Description</FormLabel>
                         <FormControl>
-                          <Textarea {...field} />
+                          <Textarea {...field} className="min-h-[100px] text-lg" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -274,31 +274,33 @@ export default function CreateSurvey() {
               </Card>
 
               <Card>
-                <CardHeader className="flex flex-row items-center justify-between pb-4">
-                  <div>
-                    <CardTitle>Questions</CardTitle>
-                    <CardDescription>
-                      Add or generate survey questions
-                    </CardDescription>
-                  </div>
-                  <div className="flex space-x-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={generateQuestions}
-                      disabled={isGenerating}
-                    >
-                      {isGenerating ? (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      ) : (
-                        <Wand2 className="mr-2 h-4 w-4" />
-                      )}
-                      Generate Questions
-                    </Button>
-                    <Button type="button" onClick={addQuestion}>
-                      <Plus className="mr-2 h-4 w-4" />
-                      Add Question
-                    </Button>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle>Questions</CardTitle>
+                      <CardDescription>
+                        Add or generate survey questions
+                      </CardDescription>
+                    </div>
+                    <div className="flex space-x-4">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={generateQuestions}
+                        disabled={isGenerating}
+                      >
+                        {isGenerating ? (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                          <Wand2 className="mr-2 h-4 w-4" />
+                        )}
+                        Generate Questions
+                      </Button>
+                      <Button type="button" onClick={addQuestion}>
+                        <Plus className="mr-2 h-4 w-4" />
+                        Add Question
+                      </Button>
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent>
@@ -308,7 +310,7 @@ export default function CreateSurvey() {
                         <div
                           {...provided.droppableProps}
                           ref={provided.innerRef}
-                          className="space-y-3"
+                          className="space-y-6"
                         >
                           {form.watch("questions")?.map((_, index) => (
                             <Draggable
@@ -320,15 +322,15 @@ export default function CreateSurvey() {
                                 <div
                                   ref={provided.innerRef}
                                   {...provided.draggableProps}
-                                  className="flex items-start space-x-3 bg-muted/50 p-4 rounded-lg"
+                                  className="flex items-start space-x-6 bg-muted/50 p-6 rounded-lg"
                                 >
                                   <div
                                     {...provided.dragHandleProps}
-                                    className="mt-4"
+                                    className="mt-8"
                                   >
                                     <GripVertical className="h-5 w-5 text-muted-foreground" />
                                   </div>
-                                  <div className="flex-1 space-y-3">
+                                  <div className="flex-1 space-y-6">
                                     <FormField
                                       control={form.control}
                                       name={`questions.${index}.text`}
@@ -336,37 +338,52 @@ export default function CreateSurvey() {
                                         <FormItem>
                                           <FormLabel>Question Text</FormLabel>
                                           <FormControl>
-                                            <Input {...field} />
+                                            <Input {...field} className="text-lg" />
                                           </FormControl>
                                           <FormMessage />
                                         </FormItem>
                                       )}
                                     />
-                                    <FormField
-                                      control={form.control}
-                                      name={`questions.${index}.type`}
-                                      render={({ field }) => (
-                                        <FormItem>
-                                          <FormLabel>Question Type</FormLabel>
-                                          <Select
-                                            onValueChange={field.onChange}
-                                            defaultValue={field.value}
-                                          >
-                                            <FormControl>
-                                              <SelectTrigger>
-                                                <SelectValue />
-                                              </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                              <SelectItem value="text">Text</SelectItem>
-                                              <SelectItem value="multiple_choice">Multiple Choice</SelectItem>
-                                              <SelectItem value="rating">Rating</SelectItem>
-                                            </SelectContent>
-                                          </Select>
-                                          <FormMessage />
-                                        </FormItem>
-                                      )}
-                                    />
+                                    <div className="flex space-x-4">
+                                      <FormField
+                                        control={form.control}
+                                        name={`questions.${index}.type`}
+                                        render={({ field }) => (
+                                          <FormItem className="flex-1">
+                                            <FormLabel>Question Type</FormLabel>
+                                            <Select
+                                              onValueChange={field.onChange}
+                                              defaultValue={field.value}
+                                            >
+                                              <FormControl>
+                                                <SelectTrigger>
+                                                  <SelectValue />
+                                                </SelectTrigger>
+                                              </FormControl>
+                                              <SelectContent>
+                                                <SelectItem value="text">Text</SelectItem>
+                                                <SelectItem value="multiple_choice">Multiple Choice</SelectItem>
+                                                <SelectItem value="rating">Rating</SelectItem>
+                                              </SelectContent>
+                                            </Select>
+                                            <FormMessage />
+                                          </FormItem>
+                                        )}
+                                      />
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon"
+                                        className="text-destructive mt-8"
+                                        onClick={() => {
+                                          const questions = form.getValues("questions");
+                                          questions.splice(index, 1);
+                                          form.setValue("questions", questions);
+                                        }}
+                                      >
+                                        <Trash2 className="h-5 w-5" />
+                                      </Button>
+                                    </div>
                                     {form.watch(`questions.${index}.type`) === "multiple_choice" && (
                                       <FormField
                                         control={form.control}
@@ -385,6 +402,7 @@ export default function CreateSurvey() {
                                                       .filter(Boolean)
                                                   )
                                                 }
+                                                className="min-h-[120px] text-lg"
                                               />
                                             </FormControl>
                                             <FormMessage />
@@ -393,19 +411,6 @@ export default function CreateSurvey() {
                                       />
                                     )}
                                   </div>
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="icon"
-                                    className="text-destructive"
-                                    onClick={() => {
-                                      const questions = form.getValues("questions");
-                                      questions.splice(index, 1);
-                                      form.setValue("questions", questions);
-                                    }}
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
                                 </div>
                               )}
                             </Draggable>
@@ -419,15 +424,15 @@ export default function CreateSurvey() {
               </Card>
             </div>
 
-            <div className="flex justify-end space-x-2">
+            <div className="flex justify-end space-x-4 pt-4">
               <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
                 <DialogTrigger asChild>
-                  <Button type="button" variant="outline">
-                    <Eye className="mr-2 h-4 w-4" />
+                  <Button type="button" variant="outline" size="lg">
+                    <Eye className="mr-2 h-5 w-5" />
                     Preview Survey
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+                <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
                   <DialogHeader>
                     <DialogTitle>Survey Preview</DialogTitle>
                     <DialogDescription>
@@ -445,7 +450,7 @@ export default function CreateSurvey() {
               >
                 {createSurveyMutation.isPending ? (
                   <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                     Creating Survey...
                   </>
                 ) : (
