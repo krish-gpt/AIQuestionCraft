@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { insertSurveySchema } from "@shared/schema";
+import { insertSurveySchema, type Survey } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -71,14 +71,29 @@ export default function CreateSurvey() {
   const createSurveyMutation = useMutation({
     mutationFn: async (data) => {
       const res = await apiRequest("POST", "/api/surveys", data);
-      return res.json();
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || "Failed to create survey");
+      }
+      const survey = await res.json();
+      return survey as Survey;
     },
     onSuccess: (data) => {
+      if (!data || !data.id) {
+        throw new Error("Invalid response from server");
+      }
       toast({
         title: "Survey created",
         description: "Your survey is now ready to share",
       });
       navigate(`/analytics/${data.id}`);
+    },
+    onError: (error) => {
+      toast({
+        title: "Error creating survey",
+        description: error instanceof Error ? error.message : "Failed to create survey",
+        variant: "destructive",
+      });
     },
   });
 
