@@ -71,16 +71,14 @@ export default function HomePage() {
     <div className="min-h-screen bg-background">
       <div className="container max-w-6xl py-8">
         {/* Hero Section */}
-        <div className="mb-8">
-          <div className="flex justify-between items-center mb-4">
-            <div className="flex items-center gap-4">
-              <ClipboardList className="h-12 w-12 text-primary" />
-              <div>
-                <h1 className="text-4xl font-bold">Home Page</h1>
-                <p className="text-xl text-muted-foreground">
-                  Hello, {user?.username}!
-                </p>
-              </div>
+        <div className="mb-8 text-center">
+          <div className="flex flex-col items-center justify-center mb-4">
+            <ClipboardList className="h-12 w-12 text-primary mb-4" />
+            <div className="text-center mb-4">
+              <h1 className="text-4xl font-bold">Home Page</h1>
+              <p className="text-xl text-muted-foreground">
+                Hello, {user?.username}!
+              </p>
             </div>
             <Button
               variant="outline"
