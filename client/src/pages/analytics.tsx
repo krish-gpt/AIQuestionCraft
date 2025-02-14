@@ -96,6 +96,67 @@ export default function Analytics({ params }: { params: { id: string } }) {
     enabled: !!surveyId && responses ? responses.length > 0 : false,
   });
 
+  const getQuestionStats = (questionId: string) => {
+    if (!responses || !survey) return [];
+
+    const question = survey.questions.find((q) => q.id === questionId);
+    if (!question) return [];
+
+    if (question.type === "multiple_choice") {
+      const counts = responses.reduce((acc, response) => {
+        const answer = response.answers[questionId];
+        if (answer) {
+          acc[answer] = (acc[answer] || 0) + 1;
+        }
+        return acc;
+      }, {} as Record<string, number>);
+
+      return Object.entries(counts).map(([name, value]) => ({
+        name,
+        value,
+      }));
+    }
+
+    if (question.type === "rating") {
+      const counts = responses.reduce((acc, response) => {
+        const answer = response.answers[questionId];
+        if (answer) {
+          acc[answer] = (acc[answer] || 0) + 1;
+        }
+        return acc;
+      }, {} as Record<string, number>);
+
+      return [1, 2, 3, 4, 5].map((rating) => ({
+        name: rating.toString(),
+        value: counts[rating.toString()] || 0,
+      }));
+    }
+
+    return [];
+  };
+
+  const getSentimentColor = (sentiment: string) => {
+    switch (sentiment) {
+      case 'positive':
+        return 'bg-green-100 text-green-800';
+      case 'negative':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getTrendIcon = (trend: string) => {
+    switch (trend) {
+      case 'increasing':
+        return '↗';
+      case 'decreasing':
+        return '↘';
+      default:
+        return '→';
+    }
+  };
+
   // If no valid survey ID, show error
   if (!surveyId) {
     return (
@@ -438,64 +499,3 @@ export default function Analytics({ params }: { params: { id: string } }) {
     </div>
   );
 }
-
-const getQuestionStats = (questionId: string) => {
-  if (!responses || !survey) return [];
-
-  const question = survey.questions.find((q) => q.id === questionId);
-  if (!question) return [];
-
-  if (question.type === "multiple_choice") {
-    const counts = responses.reduce((acc, response) => {
-      const answer = response.answers[questionId];
-      if (answer) {
-        acc[answer] = (acc[answer] || 0) + 1;
-      }
-      return acc;
-    }, {} as Record<string, number>);
-
-    return Object.entries(counts).map(([name, value]) => ({
-      name,
-      value,
-    }));
-  }
-
-  if (question.type === "rating") {
-    const counts = responses.reduce((acc, response) => {
-      const answer = response.answers[questionId];
-      if (answer) {
-        acc[answer] = (acc[answer] || 0) + 1;
-      }
-      return acc;
-    }, {} as Record<string, number>);
-
-    return [1, 2, 3, 4, 5].map((rating) => ({
-      name: rating.toString(),
-      value: counts[rating.toString()] || 0,
-    }));
-  }
-
-  return [];
-};
-
-const getSentimentColor = (sentiment: string) => {
-  switch (sentiment) {
-    case 'positive':
-      return 'bg-green-100 text-green-800';
-    case 'negative':
-      return 'bg-red-100 text-red-800';
-    default:
-      return 'bg-gray-100 text-gray-800';
-  }
-};
-
-const getTrendIcon = (trend: string) => {
-  switch (trend) {
-    case 'increasing':
-      return '↗';
-    case 'decreasing':
-      return '↘';
-    default:
-      return '→';
-  }
-};
