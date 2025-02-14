@@ -12,11 +12,11 @@ export async function generateSurveyQuestions(topic: string, count: number = 5) 
         {
           role: "system",
           content: 
-            "You are a survey design expert. Generate survey questions that are clear, unbiased, and effective at gathering insights. Include a mix of multiple choice and open-ended questions. Each question should have these exact properties: 'id' (string), 'text' (string), 'type' (multiple_choice/text/rating), and 'options' (array of strings, only for multiple_choice type). Format response as JSON array of questions.",
+            "You are a survey design expert. Generate survey questions that are clear, unbiased, and effective at gathering insights. Include a mix of multiple choice and open-ended questions. Each question should have these exact properties: 'id' (string), 'text' (string), 'type' (multiple_choice/text/rating), and 'options' (array of strings, only for multiple_choice type).",
         },
         {
           role: "user",
-          content: `Generate ${count} survey questions about ${topic}. Return an array of questions with properties: id, text, type (multiple_choice/text/rating), and options for multiple choice questions.`,
+          content: `Generate ${count} survey questions about ${topic}. Format the response as a JSON array where each question has: id, text, type (multiple_choice/text/rating), and options (array, required for multiple_choice type).`,
         },
       ],
       response_format: { type: "json_object" },
@@ -27,10 +27,15 @@ export async function generateSurveyQuestions(topic: string, count: number = 5) 
       throw new Error("No content received from OpenAI");
     }
 
-    const result = JSON.parse(content);
-    return result.questions.map((q: any) => ({
+    const questions = JSON.parse(content);
+
+    // Handle both array response and {questions: []} response formats
+    const questionsArray = Array.isArray(questions) ? questions : questions.questions || [];
+
+    return questionsArray.map((q: any) => ({
       ...q,
-      id: crypto.randomUUID(), // Generate unique ID for each question
+      id: crypto.randomUUID(),
+      options: q.type === 'multiple_choice' ? (q.options || []) : [],
     }));
   } catch (error: any) {
     console.error("OpenAI API Error:", error);
