@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Survey, Response } from "@shared/schema";
+import { Link } from "wouter";
 import {
   Card,
   CardContent,
@@ -9,6 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import {
   Tabs,
   TabsContent,
@@ -31,17 +33,9 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  LineChart,
-  Line,
 } from "recharts";
 import { format } from "date-fns";
-import { Button } from "@/components/ui/button";
-import { Share2, Loader2, TrendingUp, MessageSquare, Brain } from "lucide-react";
-import {
-  Alert,
-  AlertDescription,
-  AlertTitle,
-} from "@/components/ui/alert";
+import { Share2, Loader2, TrendingUp, MessageSquare, Brain, ArrowLeft } from "lucide-react";
 
 interface InsightData {
   sentiment_analysis: {
@@ -203,18 +197,23 @@ export default function Analytics({ params }: { params: { id: string } }) {
 
   return (
     <div className="container max-w-6xl py-8">
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center space-x-4 mb-8">
+        <Button variant="ghost" size="icon" asChild>
+          <Link href="/">
+            <ArrowLeft className="h-5 w-5" />
+          </Link>
+        </Button>
         <div>
-          <h1 className="text-3xl font-bold">{survey.title}</h1>
+          <h1 className="text-3xl font-bold">{survey?.title}</h1>
           <p className="text-muted-foreground">
-            {survey.description}
+            {survey?.description}
           </p>
         </div>
         <Button
           variant="outline"
           onClick={() => {
             navigator.clipboard.writeText(
-              `${window.location.origin}/survey/${survey.id}`,
+              `${window.location.origin}/survey/${survey?.id}`,
             );
             toast({
               title: "Link copied",
@@ -255,12 +254,12 @@ export default function Analytics({ params }: { params: { id: string } }) {
           <CardContent>
             <span
               className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                survey.isActive
+                survey?.isActive
                   ? "bg-green-100 text-green-800"
                   : "bg-gray-100 text-gray-800"
               }`}
             >
-              {survey.isActive ? "Active" : "Closed"}
+              {survey?.isActive ? "Active" : "Closed"}
             </span>
           </CardContent>
         </Card>
