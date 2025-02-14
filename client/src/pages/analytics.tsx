@@ -381,53 +381,57 @@ export default function Analytics({ params }: { params: { id: string } }) {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  {insights.sentiment_analysis?.map((analysis, idx) => (
-                    <div key={idx} className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-medium">Response {idx + 1}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {analysis.summary}
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-2xl font-bold">{analysis.rating}/5</p>
-                          <p className="text-sm text-muted-foreground">
-                            {(analysis.confidence * 100).toFixed(0)}% confidence
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
-                        {analysis.aspects.map((aspect, aspectIdx) => (
-                          <div
-                            key={aspectIdx}
-                            className="border rounded-lg p-4 space-y-2"
-                          >
-                            <div className="flex items-center justify-between">
-                              <p className="font-medium">{aspect.category}</p>
-                              <span
-                                className={`px-2 py-1 rounded-full text-xs ${getSentimentColor(
-                                  aspect.sentiment
-                                )}`}
-                              >
-                                {aspect.sentiment}
-                              </span>
-                            </div>
-                            <div className="space-y-1">
-                              {aspect.key_phrases.map((phrase, phraseIdx) => (
-                                <p
-                                  key={phraseIdx}
-                                  className="text-sm text-muted-foreground"
-                                >
-                                  • {phrase}
-                                </p>
-                              ))}
-                            </div>
+                  {responses?.map((response, idx) => (
+                    response.sentiment && (
+                      <div key={idx} className="space-y-4">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm font-medium">Response {idx + 1}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {response.sentiment.summary}
+                            </p>
                           </div>
-                        ))}
+                          <div className="text-right">
+                            <p className="text-2xl font-bold">{response.sentiment.rating}/5</p>
+                            <p className="text-sm text-muted-foreground">
+                              {(response.sentiment.confidence * 100).toFixed(0)}% confidence
+                            </p>
+                          </div>
+                        </div>
+
+                        {response.sentiment.aspects && response.sentiment.aspects.length > 0 && (
+                          <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
+                            {response.sentiment.aspects.map((aspect, aspectIdx) => (
+                              <div
+                                key={aspectIdx}
+                                className="border rounded-lg p-4 space-y-2"
+                              >
+                                <div className="flex items-center justify-between">
+                                  <p className="font-medium">{aspect.category}</p>
+                                  <span
+                                    className={`px-2 py-1 rounded-full text-xs ${getSentimentColor(
+                                      aspect.sentiment
+                                    )}`}
+                                  >
+                                    {aspect.sentiment}
+                                  </span>
+                                </div>
+                                <div className="space-y-1">
+                                  {aspect.key_phrases.map((phrase, phraseIdx) => (
+                                    <p
+                                      key={phraseIdx}
+                                      className="text-sm text-muted-foreground"
+                                    >
+                                      • {phrase}
+                                    </p>
+                                  ))}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
-                    </div>
+                    )
                   ))}
                 </CardContent>
               </Card>
