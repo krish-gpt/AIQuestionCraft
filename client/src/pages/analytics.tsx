@@ -36,6 +36,11 @@ import {
 } from "recharts";
 import { format } from "date-fns";
 import { Share2, Loader2, TrendingUp, MessageSquare, Brain, ArrowLeft } from "lucide-react";
+import {
+  Alert,
+  AlertTitle,
+  AlertDescription,
+} from "@/components/ui/alert";
 
 interface InsightData {
   sentiment_analysis: {
