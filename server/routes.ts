@@ -150,6 +150,18 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Add DELETE survey endpoint
+  app.delete("/api/surveys/:id", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+
+    const survey = await storage.getSurvey(Number(req.params.id));
+    if (!survey) return res.sendStatus(404);
+    if (survey.userId !== req.user!.id) return res.sendStatus(403);
+
+    await storage.deleteSurvey(survey.id);
+    res.sendStatus(200);
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

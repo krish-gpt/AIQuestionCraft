@@ -1,6 +1,6 @@
 import { useAuth } from "@/hooks/use-auth";
 import { Link } from "wouter";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Survey } from "@shared/schema";
 import {
   Card,
@@ -19,14 +19,52 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, BarChart3, Share2, ClipboardList, LogOut } from "lucide-react";
+import { Plus, BarChart3, Share2, ClipboardList, LogOut, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { apiRequest } from "@/lib/queryClient";
 
 export default function HomePage() {
   const { user, logoutMutation } = useAuth();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+
   const { data: surveys, isLoading } = useQuery<Survey[]>({
     queryKey: ["/api/surveys"],
+  });
+
+  const deleteSurveyMutation = useMutation({
+    mutationFn: async (surveyId: number) => {
+      const res = await apiRequest("DELETE", `/api/surveys/${surveyId}`);
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || "Failed to delete survey");
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/surveys"] });
+      toast({
+        title: "Survey deleted",
+        description: "The survey has been deleted successfully",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error deleting survey",
+        description: error instanceof Error ? error.message : "Failed to delete survey",
+        variant: "destructive",
+      });
+    },
   });
 
   return (
@@ -157,6 +195,36 @@ export default function HomePage() {
                           <Share2 className="h-4 w-4 mr-1" />
                           Share
                         </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="inline-flex items-center text-destructive hover:text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4 mr-1" />
+                              Delete
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete Survey</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Are you sure you want to delete this survey? This action cannot be undone 
+                                and all responses will be permanently deleted.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                onClick={() => deleteSurveyMutation.mutate(survey.id)}
+                              >
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       </TableCell>
                     </TableRow>
                   ))}
