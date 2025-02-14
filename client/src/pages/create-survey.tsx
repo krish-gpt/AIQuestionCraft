@@ -6,7 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useLocation, Link } from "wouter";
-import { useAuth } from "@/hooks/use-auth"; // Import useAuth hook
+import { useAuth } from "@/hooks/use-auth";
 import {
   Form,
   FormControl,
@@ -33,17 +33,31 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
   DragDropContext,
   Droppable,
   Draggable,
 } from "@hello-pangea/dnd";
-import { Loader2, GripVertical, Wand2, Plus, Trash2, ArrowLeft } from "lucide-react";
+import { Loader2, GripVertical, Wand2, Plus, Trash2, ArrowLeft, Eye } from "lucide-react";
+import {
+  RadioGroup,
+  RadioGroupItem,
+} from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 
 export default function CreateSurvey() {
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const [isGenerating, setIsGenerating] = useState(false);
-  const { user } = useAuth(); // Add useAuth hook to check authentication state
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const { user } = useAuth();
 
   const form = useForm({
     resolver: zodResolver(insertSurveySchema),
@@ -133,6 +147,58 @@ export default function CreateSurvey() {
         options: [],
       },
     ]);
+  };
+
+  const PreviewSurvey = () => {
+    const formData = form.getValues();
+
+    return (
+      <div className="space-y-8">
+        <Card>
+          <CardHeader>
+            <CardTitle>{formData.title}</CardTitle>
+            {formData.description && (
+              <CardDescription>{formData.description}</CardDescription>
+            )}
+          </CardHeader>
+        </Card>
+
+        {formData.questions.map((question) => (
+          <Card key={question.id}>
+            <CardContent className="pt-6">
+              <div className="space-y-4">
+                <Label>{question.text}</Label>
+                {question.type === "text" ? (
+                  <Textarea disabled placeholder="Text answer" />
+                ) : question.type === "multiple_choice" ? (
+                  <RadioGroup disabled>
+                    {question.options?.map((option) => (
+                      <div key={option} className="flex items-center space-x-2">
+                        <RadioGroupItem value={option} id={option} />
+                        <Label htmlFor={option}>{option}</Label>
+                      </div>
+                    ))}
+                  </RadioGroup>
+                ) : question.type === "rating" ? (
+                  <RadioGroup className="flex space-x-2">
+                    {[1, 2, 3, 4, 5].map((rating) => (
+                      <div key={rating} className="flex flex-col items-center">
+                        <RadioGroupItem
+                          value={rating.toString()}
+                          id={`rating-${rating}`}
+                          disabled
+                        />
+                        <Label htmlFor={`rating-${rating}`}>{rating}</Label>
+                      </div>
+                    ))}
+                  </RadioGroup>
+                ) : null}
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
   };
 
   return (
@@ -336,7 +402,25 @@ export default function CreateSurvey() {
               </CardContent>
             </Card>
 
-            <div className="flex justify-end">
+            <div className="flex justify-end space-x-2">
+              <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+                <DialogTrigger asChild>
+                  <Button type="button" variant="outline">
+                    <Eye className="mr-2 h-4 w-4" />
+                    Preview Survey
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>Survey Preview</DialogTitle>
+                    <DialogDescription>
+                      Here's how your survey will look to respondents
+                    </DialogDescription>
+                  </DialogHeader>
+                  <PreviewSurvey />
+                </DialogContent>
+              </Dialog>
+
               <Button
                 type="submit"
                 size="lg"
