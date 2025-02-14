@@ -69,9 +69,9 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container max-w-6xl py-8 relative">
+      <div className="container max-w-6xl py-8">
         {/* Sign Out Button */}
-        <div className="absolute top-0 right-0">
+        <div className="flex justify-end mb-8">
           <Button
             variant="outline"
             onClick={() => logoutMutation.mutate()}
