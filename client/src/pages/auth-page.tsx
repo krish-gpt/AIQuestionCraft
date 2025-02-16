@@ -32,16 +32,24 @@ import { Redirect } from "wouter";
 import { ClipboardList } from "lucide-react";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
+import React from "react";
 
 const resetPasswordSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
 });
 
+const confirmResetSchema = z.object({
+  token: z.string().min(1, "Reset token is required"),
+  newPassword: z.string().min(6, "Password must be at least 6 characters"),
+});
+
 type ResetPasswordData = z.infer<typeof resetPasswordSchema>;
+type ConfirmResetData = z.infer<typeof confirmResetSchema>;
 
 export default function AuthPage() {
   const { user, loginMutation, registerMutation } = useAuth();
   const { toast } = useToast();
+  const [resetToken, setResetToken] = React.useState<string | null>(null);
 
   const loginForm = useForm({
     resolver: zodResolver(insertUserSchema.omit({ email: true })),
@@ -67,6 +75,14 @@ export default function AuthPage() {
     },
   });
 
+  const confirmResetForm = useForm({
+    resolver: zodResolver(confirmResetSchema),
+    defaultValues: {
+      token: "",
+      newPassword: "",
+    },
+  });
+
   const onResetPassword = async (data: ResetPasswordData) => {
     try {
       const response = await fetch("/api/reset-password", {
@@ -76,19 +92,52 @@ export default function AuthPage() {
         },
         body: JSON.stringify(data),
       });
+
+      const result = await response.json();
+
       if (response.ok) {
-        // Show success message
+        setResetToken(result.resetToken);
         toast({
-          title: "Reset email sent",
-          description: "Check your email for password reset instructions",
+          title: "Reset token generated",
+          description: "Use the token shown below to reset your password",
         });
       } else {
-        throw new Error("Failed to send reset email");
+        throw new Error(result.message || "Failed to generate reset token");
       }
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to send reset email. Please try again later.",
+        description: error instanceof Error ? error.message : "Failed to process reset request",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const onConfirmReset = async (data: ConfirmResetData) => {
+    try {
+      const response = await fetch("/api/reset-password/confirm", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        toast({
+          title: "Password reset successful",
+          description: "You can now login with your new password",
+        });
+        setResetToken(null);
+      } else {
+        throw new Error(result.message || "Failed to reset password");
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to reset password",
         variant: "destructive",
       });
     }
@@ -170,32 +219,84 @@ export default function AuthPage() {
                           <DialogHeader>
                             <DialogTitle>Reset Password</DialogTitle>
                             <DialogDescription>
-                              Enter your email address and we'll send you instructions to reset your password.
+                              {resetToken
+                                ? "Enter the token shown below and your new password"
+                                : "Enter your email address to receive a password reset token"}
                             </DialogDescription>
                           </DialogHeader>
-                          <Form {...resetPasswordForm}>
-                            <form
-                              onSubmit={resetPasswordForm.handleSubmit(onResetPassword)}
-                              className="space-y-4"
-                            >
-                              <FormField
-                                control={resetPasswordForm.control}
-                                name="email"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>Email</FormLabel>
-                                    <FormControl>
-                                      <Input type="email" {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>
+                          {resetToken ? (
+                            <>
+                              <div className="bg-muted p-4 rounded-md mb-4">
+                                <p className="text-sm font-mono break-all">
+                                  {resetToken}
+                                </p>
+                              </div>
+                              <Form {...confirmResetForm}>
+                                <form
+                                  onSubmit={confirmResetForm.handleSubmit(
+                                    onConfirmReset,
+                                  )}
+                                  className="space-y-4"
+                                >
+                                  <FormField
+                                    control={confirmResetForm.control}
+                                    name="token"
+                                    render={({ field }) => (
+                                      <FormItem>
+                                        <FormLabel>Reset Token</FormLabel>
+                                        <FormControl>
+                                          <Input {...field} />
+                                        </FormControl>
+                                        <FormMessage />
+                                      </FormItem>
+                                    )}
+                                  />
+                                  <FormField
+                                    control={confirmResetForm.control}
+                                    name="newPassword"
+                                    render={({ field }) => (
+                                      <FormItem>
+                                        <FormLabel>New Password</FormLabel>
+                                        <FormControl>
+                                          <Input type="password" {...field} />
+                                        </FormControl>
+                                        <FormMessage />
+                                      </FormItem>
+                                    )}
+                                  />
+                                  <Button type="submit" className="w-full">
+                                    Reset Password
+                                  </Button>
+                                </form>
+                              </Form>
+                            </>
+                          ) : (
+                            <Form {...resetPasswordForm}>
+                              <form
+                                onSubmit={resetPasswordForm.handleSubmit(
+                                  onResetPassword,
                                 )}
-                              />
-                              <Button type="submit" className="w-full">
-                                Send Reset Instructions
-                              </Button>
-                            </form>
-                          </Form>
+                                className="space-y-4"
+                              >
+                                <FormField
+                                  control={resetPasswordForm.control}
+                                  name="email"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel>Email</FormLabel>
+                                      <FormControl>
+                                        <Input type="email" {...field} />
+                                      </FormControl>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                                <Button type="submit" className="w-full">
+                                  Get Reset Token
+                                </Button>
+                              </form>
+                            </Form>
+                          )}
                         </DialogContent>
                       </Dialog>
                     </div>

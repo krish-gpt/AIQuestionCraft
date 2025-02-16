@@ -26,6 +26,8 @@ export interface IStorage {
   getUserByEmail(email: string): Promise<User | undefined>;
   setResetToken(userId: number, token: string, expiry: Date): Promise<void>;
   getUserByResetToken(token: string): Promise<User | undefined>;
+  updateUserPassword(userId: number, newPassword: string): Promise<void>;
+  clearResetToken(userId: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -120,6 +122,23 @@ export class DatabaseStorage implements IStorage {
         sql`${users.resetToken} = ${token} AND ${users.resetTokenExpiry} > NOW()`
       );
     return user;
+  }
+
+  async updateUserPassword(userId: number, newPassword: string): Promise<void> {
+    await db
+      .update(users)
+      .set({ password: newPassword })
+      .where(eq(users.id, userId));
+  }
+
+  async clearResetToken(userId: number): Promise<void> {
+    await db
+      .update(users)
+      .set({
+        resetToken: null,
+        resetTokenExpiry: null,
+      })
+      .where(eq(users.id, userId));
   }
 }
 
