@@ -29,7 +29,6 @@ async function comparePasswords(supplied: string, stored: string) {
 }
 
 export function setupAuth(app: Express) {
-  // Using SESSION_SECRET instead of REPL_ID
   const sessionSecret = process.env.SESSION_SECRET;
   if (!sessionSecret) {
     throw new Error("SESSION_SECRET environment variable is required for session security");
@@ -41,12 +40,12 @@ export function setupAuth(app: Express) {
     saveUninitialized: false,
     store: storage.sessionStore,
     cookie: {
-      secure: false, // Changed to false for development
-      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      secure: false, 
+      maxAge: 24 * 60 * 60 * 1000, 
       httpOnly: true,
-      sameSite: 'lax' // Added for better development compatibility
+      sameSite: 'lax' 
     },
-    name: 'sessionId' // Using a generic name for security
+    name: 'sessionId' 
   };
 
   if (app.get("env") === "production") {
@@ -122,5 +121,33 @@ export function setupAuth(app: Express) {
   app.get("/api/user", (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
     res.json(req.user);
+  });
+
+  // Add password reset endpoint
+  app.post("/api/reset-password", async (req, res) => {
+    try {
+      const { email } = req.body;
+      const user = await storage.getUserByEmail(email);
+
+      if (!user) {
+        return res.status(200).json({
+          message: "If an account exists with that email, you will receive password reset instructions"
+        });
+      }
+
+      const resetToken = randomBytes(32).toString('hex');
+      const resetTokenExpiry = new Date(Date.now() + 3600000); 
+
+      await storage.setResetToken(user.id, resetToken, resetTokenExpiry);
+
+      res.status(200).json({
+        message: "If an account exists with that email, you will receive password reset instructions"
+      });
+    } catch (error) {
+      console.error('Password reset error:', error);
+      res.status(500).json({
+        message: "An error occurred while processing your request"
+      });
+    }
   });
 }

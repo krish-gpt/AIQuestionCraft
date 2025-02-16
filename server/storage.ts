@@ -1,7 +1,7 @@
 import { users, surveys, responses } from "@shared/schema";
 import type { User, Survey, Response, InsertUser, InsertSurvey, InsertResponse } from "@shared/schema";
 import { db } from "./db";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import { pool } from "./db";
@@ -23,6 +23,9 @@ export interface IStorage {
   updateResponseSentiment(responseId: number, sentiment: any): Promise<void>;
 
   sessionStore: session.Store;
+  getUserByEmail(email: string): Promise<User | undefined>;
+  setResetToken(userId: number, token: string, expiry: Date): Promise<void>;
+  getUserByResetToken(token: string): Promise<User | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -92,6 +95,31 @@ export class DatabaseStorage implements IStorage {
       .update(responses)
       .set({ sentiment })
       .where(eq(responses.id, responseId));
+  }
+
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user;
+  }
+
+  async setResetToken(userId: number, token: string, expiry: Date): Promise<void> {
+    await db
+      .update(users)
+      .set({
+        resetToken: token,
+        resetTokenExpiry: expiry,
+      })
+      .where(eq(users.id, userId));
+  }
+
+  async getUserByResetToken(token: string): Promise<User | undefined> {
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(
+        sql`${users.resetToken} = ${token} AND ${users.resetTokenExpiry} > NOW()`
+      );
+    return user;
   }
 }
 
