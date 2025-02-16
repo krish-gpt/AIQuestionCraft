@@ -9,13 +9,15 @@ import HomePage from "@/pages/home-page";
 import CreateSurvey from "@/pages/create-survey";
 import Survey from "@/pages/survey";
 import Analytics from "@/pages/analytics";
+import LandingPage from "@/pages/landing-page";
 import { ProtectedRoute } from "./lib/protected-route";
 
 function Router() {
   return (
     <Switch>
+      <Route path="/" component={LandingPage} />
       <Route path="/auth" component={AuthPage} />
-      <ProtectedRoute path="/" component={HomePage} />
+      <ProtectedRoute path="/dashboard" component={HomePage} />
       <ProtectedRoute path="/create" component={CreateSurvey} />
       <ProtectedRoute 
         path="/analytics/:id" 
