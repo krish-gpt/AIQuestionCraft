@@ -78,23 +78,13 @@ interface InsightData {
   };
 }
 
-interface SurveyQuestion {
-  id: string;
-  text: string;
-  type: string;
-  options?: string[];
-}
-
-interface ExtendedSurvey extends Survey {
-  questions: SurveyQuestion[];
-}
 
 export default function Analytics({ params }: { params: { id: string } }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const surveyId = params?.id ? parseInt(params.id) : null;
 
-  const { data: survey, isLoading: surveyLoading } = useQuery<ExtendedSurvey>({
+  const { data: survey, isLoading: surveyLoading } = useQuery<Survey>({
     queryKey: [`/api/surveys/${surveyId}`],
     enabled: !!surveyId,
     queryFn: async () => {
