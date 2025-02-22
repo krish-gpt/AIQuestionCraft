@@ -46,7 +46,7 @@ interface SurveyAnswers {
 }
 
 // Extend the Response type to include properly typed answers
-interface ExtendedResponse extends Omit<Response, 'answers'> {
+interface ExtendedResponse extends Omit<Response, "answers"> {
   answers: SurveyAnswers;
 }
 
@@ -78,6 +78,17 @@ interface InsightData {
   };
 }
 
+const calculateAverageSentiment = (responses: ExtendedResponse[] | undefined): number => {
+    if (!responses || responses.length === 0) return 0;
+
+    const total = responses.reduce((sum, response) => {
+      // Ensure we have a number, defaulting to 0 if sentiment or rating is undefined
+      const rating = typeof response.sentiment?.rating === 'number' ? response.sentiment.rating : 0;
+      return sum + rating;
+    }, 0);
+
+    return total / responses.length;
+  };
 
 export default function Analytics({ params }: { params: { id: string } }) {
   const { toast } = useToast();
@@ -94,7 +105,9 @@ export default function Analytics({ params }: { params: { id: string } }) {
     },
   });
 
-  const { data: responses, isLoading: responsesLoading } = useQuery<ExtendedResponse[]>({
+  const { data: responses, isLoading: responsesLoading } = useQuery<
+    ExtendedResponse[]
+  >({
     queryKey: [`/api/surveys/${surveyId}/responses`],
     enabled: !!surveyId,
     queryFn: async () => {
@@ -260,12 +273,7 @@ export default function Analytics({ params }: { params: { id: string } }) {
     );
   }
 
-  const averageSentiment = responses && responses.length > 0
-    ? responses.reduce((sum, response) => {
-        const rating = response.sentiment?.rating ?? 0;
-        return sum + rating;
-      }, 0) / responses.length
-    : 0;
+  const averageSentiment = calculateAverageSentiment(responses);
 
   return (
     <div className="container max-w-6xl py-8">
