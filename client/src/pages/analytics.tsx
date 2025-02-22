@@ -45,11 +45,6 @@ interface SurveyAnswers {
   [questionId: string]: string;
 }
 
-// Extend the Response type to include properly typed answers
-interface ExtendedResponse extends Omit<Response, "answers"> {
-  answers: SurveyAnswers;
-}
-
 interface InsightData {
   sentiment_analysis: {
     rating: number;
@@ -61,7 +56,7 @@ interface InsightData {
       key_phrases: string[];
     }[];
     summary: string;
-  }[];
+  };
   trends: {
     overall_trends: {
       topic: string;
@@ -78,12 +73,30 @@ interface InsightData {
   };
 }
 
+interface ResponseSentiment {
+  rating: number;
+  confidence: number;
+  aspects: {
+    category: string;
+    sentiment: "positive" | "negative" | "neutral";
+    score: number;
+    key_phrases: string[];
+  }[];
+  summary: string;
+}
+
+// Extend the Response type to include properly typed answers and sentiment
+interface ExtendedResponse extends Omit<Response, "answers" | "sentiment"> {
+  answers: SurveyAnswers;
+  sentiment?: ResponseSentiment;
+}
+
 const calculateAverageSentiment = (responses: ExtendedResponse[] | undefined): number => {
   if (!responses || responses.length === 0) return 0;
 
   const total = responses.reduce((sum, response) => {
     // Ensure we have a number, defaulting to 0 if sentiment or rating is undefined
-    const rating = typeof response.sentiment?.rating === 'number' ? response.sentiment.rating : 0;
+    const rating = typeof response.sentiment?.rating === 'number' ? response.sentiment?.rating : 0;
     return sum + rating;
   }, 0);
 
@@ -105,9 +118,7 @@ export default function Analytics({ params }: { params: { id: string } }) {
     },
   });
 
-  const { data: responses, isLoading: responsesLoading } = useQuery<
-    ExtendedResponse[]
-  >({
+  const { data: responses, isLoading: responsesLoading } = useQuery<ExtendedResponse[]>({
     queryKey: [`/api/surveys/${surveyId}/responses`],
     enabled: !!surveyId,
     queryFn: async () => {
