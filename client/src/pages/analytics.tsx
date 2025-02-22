@@ -79,16 +79,16 @@ interface InsightData {
 }
 
 const calculateAverageSentiment = (responses: ExtendedResponse[] | undefined): number => {
-    if (!responses || responses.length === 0) return 0;
+  if (!responses || responses.length === 0) return 0;
 
-    const total = responses.reduce((sum, response) => {
-      // Ensure we have a number, defaulting to 0 if sentiment or rating is undefined
-      const rating = typeof response.sentiment?.rating === 'number' ? response.sentiment.rating : 0;
-      return sum + rating;
-    }, 0);
+  const total = responses.reduce((sum, response) => {
+    // Ensure we have a number, defaulting to 0 if sentiment or rating is undefined
+    const rating = typeof response.sentiment?.rating === 'number' ? response.sentiment.rating : 0;
+    return sum + rating;
+  }, 0);
 
-    return total / responses.length;
-  };
+  return Number((total / responses.length).toFixed(1));
+};
 
 export default function Analytics({ params }: { params: { id: string } }) {
   const { toast } = useToast();
@@ -273,7 +273,6 @@ export default function Analytics({ params }: { params: { id: string } }) {
     );
   }
 
-  const averageSentiment = calculateAverageSentiment(responses);
 
   return (
     <div className="container max-w-6xl py-8">
@@ -319,7 +318,7 @@ export default function Analytics({ params }: { params: { id: string } }) {
           </CardHeader>
           <CardContent>
             <p className="text-3xl font-bold">
-              {averageSentiment.toFixed(1)} / 5
+              {calculateAverageSentiment(responses)} / 5
             </p>
           </CardContent>
         </Card>
@@ -503,9 +502,9 @@ export default function Analytics({ params }: { params: { id: string } }) {
                   <Alert>
                     <AlertTitle>Overall Sentiment</AlertTitle>
                     <AlertDescription>
-                      Average Rating: {averageSentiment.toFixed(1)} / 5
+                      Average Rating: {calculateAverageSentiment(responses)} / 5
                       <br />
-                      Based on {responses?.length} responses
+                      Based on {responses?.length || 0} responses
                     </AlertDescription>
                   </Alert>
                   {responses?.map(
