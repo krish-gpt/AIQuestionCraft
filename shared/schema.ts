@@ -16,15 +16,32 @@ export const surveys = pgTable("surveys", {
   userId: integer("user_id").notNull(),
   title: text("title").notNull(),
   description: text("description"),
-  questions: jsonb("questions").notNull(),
+  questions: jsonb("questions").$type<{
+    id: string;
+    text: string;
+    type: "multiple_choice" | "text" | "rating";
+    options?: string[];
+  }[]>().notNull(),
   isActive: boolean("is_active").notNull().default(true),
 });
 
 export const responses = pgTable("responses", {
   id: serial("id").primaryKey(),
   surveyId: integer("survey_id").notNull(),
-  answers: jsonb("answers").notNull(),
-  sentiment: jsonb("sentiment"),
+  answers: jsonb("answers").$type<{
+    [questionId: string]: string;
+  }>().notNull(),
+  sentiment: jsonb("sentiment").$type<{
+    rating: number;
+    confidence: number;
+    aspects: {
+      category: string;
+      sentiment: "positive" | "negative" | "neutral";
+      score: number;
+      key_phrases: string[];
+    }[];
+    summary: string;
+  } | null>(),
   submittedAt: timestamp("submitted_at").notNull().defaultNow(),
 });
 

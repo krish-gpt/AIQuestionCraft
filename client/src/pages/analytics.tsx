@@ -11,12 +11,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table,
   TableBody,
@@ -35,12 +30,20 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { format } from "date-fns";
-import { Share2, Loader2, TrendingUp, MessageSquare, Brain, ArrowLeft } from "lucide-react";
 import {
-  Alert,
-  AlertTitle,
-  AlertDescription,
-} from "@/components/ui/alert";
+  Share2,
+  Loader2,
+  TrendingUp,
+  MessageSquare,
+  Brain,
+  ArrowLeft,
+} from "lucide-react";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+
+// Define the structure of survey answers
+interface SurveyAnswers {
+  [questionId: string]: string;
+}
 
 interface InsightData {
   sentiment_analysis: {
@@ -48,16 +51,16 @@ interface InsightData {
     confidence: number;
     aspects: {
       category: string;
-      sentiment: 'positive' | 'negative' | 'neutral';
+      sentiment: "positive" | "negative" | "neutral";
       score: number;
       key_phrases: string[];
     }[];
     summary: string;
-  }[];
+  };
   trends: {
     overall_trends: {
       topic: string;
-      trend: 'increasing' | 'decreasing' | 'stable';
+      trend: "increasing" | "decreasing" | "stable";
       significance: number;
       supporting_evidence: string[];
     }[];
@@ -67,53 +70,89 @@ interface InsightData {
   overallSentiment?: {
     averageRating: number;
     responseCount: number;
-  }
+  };
 }
 
-interface SurveyQuestion {
-  id: string;
-  text: string;
-  type: string;
-  options?: string[];
+interface ResponseSentiment {
+  rating: number;
+  confidence: number;
+  aspects: {
+    category: string;
+    sentiment: "positive" | "negative" | "neutral";
+    score: number;
+    key_phrases: string[];
+  }[];
+  summary: string;
 }
 
-interface ExtendedSurvey extends Survey {
-  questions: SurveyQuestion[];
+// Extend the Response type to include properly typed answers and sentiment
+interface ExtendedResponse extends Omit<Response, "answers" | "sentiment"> {
+  answers: SurveyAnswers;
+  sentiment?: ResponseSentiment;
 }
+
+const calculateAverageSentiment = (responses: ExtendedResponse[] | undefined): number => {
+  if (!responses || responses.length === 0) return 0;
+
+  const total = responses.reduce((sum, response) => {
+    // Ensure we have a number, defaulting to 0 if sentiment or rating is undefined
+    const rating = typeof response.sentiment?.rating === 'number' ? response.sentiment?.rating : 0;
+    return sum + rating;
+  }, 0);
+
+  return Number((total / responses.length).toFixed(1));
+};
 
 export default function Analytics({ params }: { params: { id: string } }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const surveyId = params?.id ? parseInt(params.id) : null;
 
-  const { data: survey, isLoading: surveyLoading } = useQuery<ExtendedSurvey>({
+  const { data: survey, isLoading: surveyLoading } = useQuery<Survey>({
     queryKey: [`/api/surveys/${surveyId}`],
     enabled: !!surveyId,
+    queryFn: async () => {
+      const res = await fetch(`/api/surveys/${surveyId}`);
+      if (!res.ok) throw new Error("Failed to fetch survey");
+      return res.json();
+    },
   });
 
-  const { data: responses, isLoading: responsesLoading } = useQuery<Response[]>({
+  const { data: responses, isLoading: responsesLoading } = useQuery<ExtendedResponse[]>({
     queryKey: [`/api/surveys/${surveyId}/responses`],
     enabled: !!surveyId,
+    queryFn: async () => {
+      const res = await fetch(`/api/surveys/${surveyId}/responses`);
+      if (!res.ok) throw new Error("Failed to fetch responses");
+      return res.json();
+    },
   });
 
   const { data: insights, isLoading: insightsLoading } = useQuery<InsightData>({
     queryKey: [`/api/surveys/${surveyId}/insights`],
     enabled: !!surveyId && responses ? responses.length > 0 : false,
+    queryFn: async () => {
+      const res = await fetch(`/api/surveys/${surveyId}/insights`);
+      if (!res.ok) throw new Error("Failed to fetch insights");
+      return res.json();
+    },
   });
 
   const generateInsightsMutation = useMutation({
     mutationFn: async () => {
       if (!surveyId) return;
       const res = await fetch(`/api/surveys/${surveyId}/insights`, {
-        method: 'POST',
+        method: "POST",
       });
       if (!res.ok) {
-        throw new Error('Failed to generate insights');
+        throw new Error("Failed to generate insights");
       }
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/surveys/${surveyId}/insights`] });
+      queryClient.invalidateQueries({
+        queryKey: [`/api/surveys/${surveyId}/insights`],
+      });
       toast({
         title: "Success",
         description: "AI insights have been generated successfully.",
@@ -122,26 +161,37 @@ export default function Analytics({ params }: { params: { id: string } }) {
     onError: (error) => {
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to generate insights",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Failed to generate insights",
         variant: "destructive",
       });
     },
   });
 
   const getQuestionStats = (questionId: string) => {
-    if (!responses || !survey) return [];
+    if (!responses || !survey?.questions) return [];
 
     const question = survey.questions.find((q) => q.id === questionId);
     if (!question) return [];
 
-    if (question.type === "multiple_choice") {
-      const counts = responses.reduce((acc, response) => {
+    // For multiple choice questions
+    if (question.type === "multiple_choice" && question.options) {
+      const counts: Record<string, number> = {};
+
+      // Initialize counts for all options
+      question.options.forEach((option) => {
+        counts[option] = 0;
+      });
+
+      // Count responses
+      responses.forEach((response) => {
         const answer = response.answers[questionId];
-        if (answer) {
-          acc[answer] = (acc[answer] || 0) + 1;
+        if (answer && typeof answer === "string") {
+          counts[answer] = (counts[answer] || 0) + 1;
         }
-        return acc;
-      }, {} as Record<string, number>);
+      });
 
       return Object.entries(counts).map(([name, value]) => ({
         name,
@@ -149,16 +199,24 @@ export default function Analytics({ params }: { params: { id: string } }) {
       }));
     }
 
+    // For rating questions
     if (question.type === "rating") {
-      const counts = responses.reduce((acc, response) => {
-        const answer = response.answers[questionId];
-        if (answer) {
-          acc[answer] = (acc[answer] || 0) + 1;
-        }
-        return acc;
-      }, {} as Record<string, number>);
+      const counts: Record<string, number> = {};
 
-      return [1, 2, 3, 4, 5].map((rating) => ({
+      // Initialize counts for ratings 1-5
+      for (let i = 1; i <= 5; i++) {
+        counts[i.toString()] = 0;
+      }
+
+      // Count responses
+      responses.forEach((response) => {
+        const answer = response.answers[questionId];
+        if (answer && typeof answer === "string") {
+          counts[answer] = (counts[answer] || 0) + 1;
+        }
+      });
+
+      return Array.from({ length: 5 }, (_, i) => i + 1).map((rating) => ({
         name: rating.toString(),
         value: counts[rating.toString()] || 0,
       }));
@@ -169,23 +227,23 @@ export default function Analytics({ params }: { params: { id: string } }) {
 
   const getSentimentColor = (sentiment: string) => {
     switch (sentiment) {
-      case 'positive':
-        return 'bg-green-100 text-green-800';
-      case 'negative':
-        return 'bg-red-100 text-red-800';
+      case "positive":
+        return "bg-green-100 text-green-800";
+      case "negative":
+        return "bg-red-100 text-red-800";
       default:
-        return 'bg-gray-100 text-gray-800';
+        return "bg-gray-100 text-gray-800";
     }
   };
 
   const getTrendIcon = (trend: string) => {
     switch (trend) {
-      case 'increasing':
-        return '↗';
-      case 'decreasing':
-        return '↘';
+      case "increasing":
+        return "↗";
+      case "decreasing":
+        return "↘";
       default:
-        return '→';
+        return "→";
     }
   };
 
@@ -196,9 +254,7 @@ export default function Analytics({ params }: { params: { id: string } }) {
         <Card>
           <CardHeader>
             <CardTitle>Invalid Survey</CardTitle>
-            <CardDescription>
-              No valid survey ID provided.
-            </CardDescription>
+            <CardDescription>No valid survey ID provided.</CardDescription>
           </CardHeader>
         </Card>
       </div>
@@ -228,23 +284,18 @@ export default function Analytics({ params }: { params: { id: string } }) {
     );
   }
 
-  const averageSentiment = responses?.reduce((sum, response) => {
-    return sum + ((response.sentiment?.rating as number) || 0);
-  }, 0) / (responses?.length || 1);
 
   return (
     <div className="container max-w-6xl py-8">
       <div className="flex items-center space-x-4 mb-8">
         <Button variant="ghost" size="icon" asChild>
-          <Link href="/">
+          <Link href="/dashboard">
             <ArrowLeft className="h-5 w-5" />
           </Link>
         </Button>
         <div>
           <h1 className="text-3xl font-bold">{survey?.title}</h1>
-          <p className="text-muted-foreground">
-            {survey?.description}
-          </p>
+          <p className="text-muted-foreground">{survey?.description}</p>
         </div>
         <Button
           variant="outline"
@@ -269,9 +320,7 @@ export default function Analytics({ params }: { params: { id: string } }) {
             <CardTitle>Total Responses</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold">
-              {responses?.length || 0}
-            </p>
+            <p className="text-3xl font-bold">{responses?.length || 0}</p>
           </CardContent>
         </Card>
         <Card>
@@ -280,7 +329,7 @@ export default function Analytics({ params }: { params: { id: string } }) {
           </CardHeader>
           <CardContent>
             <p className="text-3xl font-bold">
-              {averageSentiment.toFixed(1)} / 5
+              {calculateAverageSentiment(responses)} / 5
             </p>
           </CardContent>
         </Card>
@@ -332,9 +381,12 @@ export default function Analytics({ params }: { params: { id: string } }) {
               <CardContent className="py-8">
                 <div className="text-center space-y-4">
                   <Brain className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-semibold">No AI Insights Generated Yet</h3>
+                  <h3 className="text-lg font-semibold">
+                    No AI Insights Generated Yet
+                  </h3>
                   <p className="text-muted-foreground mb-4">
-                    Generate AI-powered insights from your survey responses to understand trends and sentiment.
+                    Generate AI-powered insights from your survey responses to
+                    understand trends and sentiment.
                   </p>
                   <Button
                     onClick={() => generateInsightsMutation.mutate()}
@@ -399,48 +451,54 @@ export default function Analytics({ params }: { params: { id: string } }) {
                           </span>
                         </div>
                         <div className="space-y-1">
-                          {trend.supporting_evidence.map((evidence, evidenceIdx) => (
-                            <p
-                              key={evidenceIdx}
-                              className="text-sm text-muted-foreground"
-                            >
-                              • {evidence}
-                            </p>
-                          ))}
+                          {trend.supporting_evidence.map(
+                            (evidence, evidenceIdx) => (
+                              <p
+                                key={evidenceIdx}
+                                className="text-sm text-muted-foreground"
+                              >
+                                • {evidence}
+                              </p>
+                            ),
+                          )}
                         </div>
                       </div>
                     ))}
                   </div>
 
-                  {insights.trends.key_insights && insights.trends.key_insights.length > 0 && (
-                    <div>
-                      <h3 className="text-lg font-semibold mb-2">Key Insights</h3>
-                      <div className="space-y-2">
-                        {insights.trends.key_insights.map((insight, idx) => (
-                          <Alert key={idx}>
-                            <AlertTitle>Insight {idx + 1}</AlertTitle>
-                            <AlertDescription>{insight}</AlertDescription>
-                          </Alert>
-                        ))}
+                  {insights.trends.key_insights &&
+                    insights.trends.key_insights.length > 0 && (
+                      <div>
+                        <h3 className="text-lg font-semibold mb-2">
+                          Key Insights
+                        </h3>
+                        <div className="space-y-2">
+                          {insights.trends.key_insights.map((insight, idx) => (
+                            <Alert key={idx}>
+                              <AlertTitle>Insight {idx + 1}</AlertTitle>
+                              <AlertDescription>{insight}</AlertDescription>
+                            </Alert>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
 
-                  {insights.trends.recommendations && insights.trends.recommendations.length > 0 && (
-                    <div>
-                      <h3 className="text-lg font-semibold mb-2">
-                        Recommendations
-                      </h3>
-                      <div className="space-y-2">
-                        {insights.trends.recommendations.map((rec, idx) => (
-                          <Alert key={idx}>
-                            <AlertTitle>Recommendation {idx + 1}</AlertTitle>
-                            <AlertDescription>{rec}</AlertDescription>
-                          </Alert>
-                        ))}
+                  {insights.trends.recommendations &&
+                    insights.trends.recommendations.length > 0 && (
+                      <div>
+                        <h3 className="text-lg font-semibold mb-2">
+                          Recommendations
+                        </h3>
+                        <div className="space-y-2">
+                          {insights.trends.recommendations.map((rec, idx) => (
+                            <Alert key={idx}>
+                              <AlertTitle>Recommendation {idx + 1}</AlertTitle>
+                              <AlertDescription>{rec}</AlertDescription>
+                            </Alert>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
                 </CardContent>
               </Card>
 
@@ -455,63 +513,78 @@ export default function Analytics({ params }: { params: { id: string } }) {
                   <Alert>
                     <AlertTitle>Overall Sentiment</AlertTitle>
                     <AlertDescription>
-                      Average Rating: {averageSentiment.toFixed(1)} / 5
+                      Average Rating: {calculateAverageSentiment(responses)} / 5
                       <br />
-                      Based on {responses?.length} responses
+                      Based on {responses?.length || 0} responses
                     </AlertDescription>
                   </Alert>
-                  {responses?.map((response, idx) => (
-                    response.sentiment && (
-                      <div key={idx} className="space-y-4">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="text-sm font-medium">Response {idx + 1}</p>
-                            <p className="text-sm text-muted-foreground">
-                              {response.sentiment.summary}
-                            </p>
+                  {responses?.map(
+                    (response, idx) =>
+                      response.sentiment && (
+                        <div key={idx} className="space-y-4">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-sm font-medium">
+                                Response {idx + 1}
+                              </p>
+                              <p className="text-sm text-muted-foreground">
+                                {response.sentiment.summary}
+                              </p>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-2xl font-bold">
+                                {response.sentiment.rating}/5
+                              </p>
+                              <p className="text-sm text-muted-foreground">
+                                {(response.sentiment.confidence * 100).toFixed(
+                                  0,
+                                )}
+                                % confidence
+                              </p>
+                            </div>
                           </div>
-                          <div className="text-right">
-                            <p className="text-2xl font-bold">{response.sentiment.rating}/5</p>
-                            <p className="text-sm text-muted-foreground">
-                              {(response.sentiment.confidence * 100).toFixed(0)}% confidence
-                            </p>
-                          </div>
-                        </div>
 
-                        {response.sentiment.aspects && response.sentiment.aspects.length > 0 && (
-                          <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
-                            {response.sentiment.aspects.map((aspect, aspectIdx) => (
-                              <div
-                                key={aspectIdx}
-                                className="border rounded-lg p-4 space-y-2"
-                              >
-                                <div className="flex items-center justify-between">
-                                  <p className="font-medium">{aspect.category}</p>
-                                  <span
-                                    className={`px-2 py-1 rounded-full text-xs ${getSentimentColor(
-                                      aspect.sentiment
-                                    )}`}
-                                  >
-                                    {aspect.sentiment}
-                                  </span>
-                                </div>
-                                <div className="space-y-1">
-                                  {aspect.key_phrases.map((phrase, phraseIdx) => (
-                                    <p
-                                      key={phraseIdx}
-                                      className="text-sm text-muted-foreground"
+                          {response.sentiment.aspects &&
+                            response.sentiment.aspects.length > 0 && (
+                              <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
+                                {response.sentiment.aspects.map(
+                                  (aspect, aspectIdx) => (
+                                    <div
+                                      key={aspectIdx}
+                                      className="border rounded-lg p-4 space-y-2"
                                     >
-                                      • {phrase}
-                                    </p>
-                                  ))}
-                                </div>
+                                      <div className="flex items-center justify-between">
+                                        <p className="font-medium">
+                                          {aspect.category}
+                                        </p>
+                                        <span
+                                          className={`px-2 py-1 rounded-full text-xs ${getSentimentColor(
+                                            aspect.sentiment,
+                                          )}`}
+                                        >
+                                          {aspect.sentiment}
+                                        </span>
+                                      </div>
+                                      <div className="space-y-1">
+                                        {aspect.key_phrases.map(
+                                          (phrase, phraseIdx) => (
+                                            <p
+                                              key={phraseIdx}
+                                              className="text-sm text-muted-foreground"
+                                            >
+                                              • {phrase}
+                                            </p>
+                                          ),
+                                        )}
+                                      </div>
+                                    </div>
+                                  ),
+                                )}
                               </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    )
-                  ))}
+                            )}
+                        </div>
+                      ),
+                  )}
                 </CardContent>
               </Card>
             </>
@@ -519,28 +592,48 @@ export default function Analytics({ params }: { params: { id: string } }) {
         </TabsContent>
 
         <TabsContent value="charts" className="space-y-8">
-          {survey?.questions
-            ?.filter((q) => q.type !== "text")
-            .map((question) => (
-              <Card key={question.id}>
-                <CardHeader>
-                  <CardTitle>{question.text}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="h-[300px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={getQuestionStats(question.id)}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="name" />
-                        <YAxis allowDecimals={false} />
-                        <Tooltip />
-                        <Bar dataKey="value" fill="hsl(var(--primary))" />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+          {!responses?.length ? (
+            <Card>
+              <CardContent className="py-8">
+                <div className="text-center text-muted-foreground">
+                  No responses yet to generate charts.
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            survey?.questions
+              ?.filter(
+                (q) => q.type === "multiple_choice" || q.type === "rating",
+              )
+              .map((question) => {
+                const data = getQuestionStats(question.id);
+                return (
+                  <Card key={question.id}>
+                    <CardHeader>
+                      <CardTitle>{question.text}</CardTitle>
+                      <CardDescription>
+                        {question.type === "rating"
+                          ? "Rating distribution"
+                          : "Response distribution"}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="h-[300px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart data={data}>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="name" />
+                            <YAxis allowDecimals={false} />
+                            <Tooltip />
+                            <Bar dataKey="value" fill="hsl(var(--primary))" />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })
+          )}
         </TabsContent>
 
         <TabsContent value="responses">
@@ -552,9 +645,7 @@ export default function Analytics({ params }: { params: { id: string } }) {
                     <TableHead>Submitted At</TableHead>
                     <TableHead>Sentiment</TableHead>
                     {survey?.questions.map((question) => (
-                      <TableHead key={question.id}>
-                        {question.text}
-                      </TableHead>
+                      <TableHead key={question.id}>{question.text}</TableHead>
                     ))}
                   </TableRow>
                 </TableHeader>
@@ -569,7 +660,9 @@ export default function Analytics({ params }: { params: { id: string } }) {
                           <span>
                             {response.sentiment.rating} / 5
                             <span className="text-xs text-muted-foreground ml-1">
-                              ({(response.sentiment.confidence * 100).toFixed(0)}% confidence)
+                              (
+                              {(response.sentiment.confidence * 100).toFixed(0)}
+                              % confidence)
                             </span>
                           </span>
                         ) : (
