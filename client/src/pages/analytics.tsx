@@ -89,16 +89,31 @@ export default function Analytics({ params }: { params: { id: string } }) {
   const { data: survey, isLoading: surveyLoading } = useQuery<ExtendedSurvey>({
     queryKey: [`/api/surveys/${surveyId}`],
     enabled: !!surveyId,
+    queryFn: async () => {
+        const res = await fetch(`/api/surveys/${surveyId}`);
+        if (!res.ok) throw new Error('Failed to fetch survey');
+        return res.json();
+      },
   });
 
   const { data: responses, isLoading: responsesLoading } = useQuery<Response[]>({
     queryKey: [`/api/surveys/${surveyId}/responses`],
     enabled: !!surveyId,
+    queryFn: async () => {
+        const res = await fetch(`/api/surveys/${surveyId}/responses`);
+        if (!res.ok) throw new Error('Failed to fetch responses');
+        return res.json();
+      },
   });
 
   const { data: insights, isLoading: insightsLoading } = useQuery<InsightData>({
     queryKey: [`/api/surveys/${surveyId}/insights`],
     enabled: !!surveyId && responses ? responses.length > 0 : false,
+    queryFn: async () => {
+        const res = await fetch(`/api/surveys/${surveyId}/insights`);
+        if (!res.ok) throw new Error('Failed to fetch insights');
+        return res.json();
+      },
   });
 
   const generateInsightsMutation = useMutation({
