@@ -129,19 +129,27 @@ export default function Analytics({ params }: { params: { id: string } }) {
   });
 
   const getQuestionStats = (questionId: string) => {
-    if (!responses || !survey) return [];
+    if (!responses || !survey?.questions) return [];
 
     const question = survey.questions.find((q) => q.id === questionId);
     if (!question) return [];
 
-    if (question.type === "multiple_choice") {
-      const counts = responses.reduce((acc, response) => {
+    // For multiple choice questions
+    if (question.type === "multiple_choice" && question.options) {
+      const counts: Record<string, number> = {};
+
+      // Initialize counts for all options
+      question.options.forEach(option => {
+        counts[option] = 0;
+      });
+
+      // Count responses
+      responses.forEach(response => {
         const answer = response.answers[questionId];
-        if (answer) {
-          acc[answer] = (acc[answer] || 0) + 1;
+        if (answer && typeof answer === 'string') {
+          counts[answer] = (counts[answer] || 0) + 1;
         }
-        return acc;
-      }, {} as Record<string, number>);
+      });
 
       return Object.entries(counts).map(([name, value]) => ({
         name,
@@ -149,16 +157,24 @@ export default function Analytics({ params }: { params: { id: string } }) {
       }));
     }
 
+    // For rating questions
     if (question.type === "rating") {
-      const counts = responses.reduce((acc, response) => {
-        const answer = response.answers[questionId];
-        if (answer) {
-          acc[answer] = (acc[answer] || 0) + 1;
-        }
-        return acc;
-      }, {} as Record<string, number>);
+      const counts: Record<string, number> = {};
 
-      return [1, 2, 3, 4, 5].map((rating) => ({
+      // Initialize counts for ratings 1-5
+      for (let i = 1; i <= 5; i++) {
+        counts[i.toString()] = 0;
+      }
+
+      // Count responses
+      responses.forEach(response => {
+        const answer = response.answers[questionId];
+        if (answer && typeof answer === 'string') {
+          counts[answer] = (counts[answer] || 0) + 1;
+        }
+      });
+
+      return Array.from({length: 5}, (_, i) => i + 1).map(rating => ({
         name: rating.toString(),
         value: counts[rating.toString()] || 0,
       }));
@@ -519,28 +535,42 @@ export default function Analytics({ params }: { params: { id: string } }) {
         </TabsContent>
 
         <TabsContent value="charts" className="space-y-8">
-          {survey?.questions
-            ?.filter((q) => q.type !== "text")
-            .map((question) => (
-              <Card key={question.id}>
-                <CardHeader>
-                  <CardTitle>{question.text}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="h-[300px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={getQuestionStats(question.id)}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="name" />
-                        <YAxis allowDecimals={false} />
-                        <Tooltip />
-                        <Bar dataKey="value" fill="hsl(var(--primary))" />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+          {!responses?.length ? (
+            <Card>
+              <CardContent className="py-8">
+                <div className="text-center text-muted-foreground">
+                  No responses yet to generate charts.
+                </div>
+              </CardContent>
+            </Card>
+          ) : survey?.questions
+            ?.filter((q) => q.type === "multiple_choice" || q.type === "rating")
+            .map((question) => {
+              const data = getQuestionStats(question.id);
+              return (
+                <Card key={question.id}>
+                  <CardHeader>
+                    <CardTitle>{question.text}</CardTitle>
+                    <CardDescription>
+                      {question.type === "rating" ? "Rating distribution" : "Response distribution"}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="h-[300px]">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={data}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="name" />
+                          <YAxis allowDecimals={false} />
+                          <Tooltip />
+                          <Bar dataKey="value" fill="hsl(var(--primary))" />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
         </TabsContent>
 
         <TabsContent value="responses">
