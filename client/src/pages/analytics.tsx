@@ -260,10 +260,12 @@ export default function Analytics({ params }: { params: { id: string } }) {
     );
   }
 
-  const averageSentiment =
-    responses?.reduce((sum, response) => {
-      return sum + ((response.sentiment?.rating as number) || 0);
-    }, 0) / (responses?.length || 1);
+  const averageSentiment = responses && responses.length > 0
+    ? responses.reduce((sum, response) => {
+        const rating = response.sentiment?.rating ?? 0;
+        return sum + rating;
+      }, 0) / responses.length
+    : 0;
 
   return (
     <div className="container max-w-6xl py-8">
