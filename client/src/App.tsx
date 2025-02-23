@@ -14,18 +14,20 @@ import { ProtectedRoute } from "./lib/protected-route";
 
 function Router() {
   return (
-    <Switch>
-      <Route path="/" component={LandingPage} />
-      <Route path="/auth" component={AuthPage} />
-      <ProtectedRoute path="/dashboard" component={HomePage} />
-      <ProtectedRoute path="/create" component={CreateSurvey} />
-      <ProtectedRoute 
-        path="/analytics/:id" 
-        component={({ params }) => <Analytics params={params} />} 
-      />
-      <Route path="/survey/:id" component={Survey} />
-      <Route component={NotFound} />
-    </Switch>
+    <div className="min-h-screen flex justify-center bg-background">
+      <Switch>
+        <Route path="/" component={LandingPage} />
+        <Route path="/auth" component={AuthPage} />
+        <ProtectedRoute path="/dashboard" component={HomePage} />
+        <ProtectedRoute path="/create" component={CreateSurvey} />
+        <ProtectedRoute
+          path="/analytics/:id"
+          component={({ params }) => <Analytics params={params} />}
+        />
+        <Route path="/survey/:id" component={Survey} />
+        <Route component={NotFound} />
+      </Switch>
+    </div>
   );
 }
 
