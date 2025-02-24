@@ -91,17 +91,12 @@ interface ExtendedResponse extends Omit<Response, "answers" | "sentiment"> {
   sentiment?: ResponseSentiment;
 }
 
-const calculateAverageSentiment = (
-  responses: ExtendedResponse[] | undefined,
-): number => {
+const calculateAverageSentiment = (responses: ExtendedResponse[] | undefined): number => {
   if (!responses || responses.length === 0) return 0;
 
   const total = responses.reduce((sum, response) => {
     // Ensure we have a number, defaulting to 0 if sentiment or rating is undefined
-    const rating =
-      typeof response.sentiment?.rating === "number"
-        ? response.sentiment?.rating
-        : 0;
+    const rating = typeof response.sentiment?.rating === 'number' ? response.sentiment?.rating : 0;
     return sum + rating;
   }, 0);
 
@@ -112,7 +107,6 @@ export default function Analytics({ params }: { params: { id: string } }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const surveyId = params?.id ? parseInt(params.id) : null;
-  const [currentTab, setCurrentTab] = useState("responses");
 
   const { data: survey, isLoading: surveyLoading } = useQuery<Survey>({
     queryKey: [`/api/surveys/${surveyId}`],
@@ -124,9 +118,7 @@ export default function Analytics({ params }: { params: { id: string } }) {
     },
   });
 
-  const { data: responses, isLoading: responsesLoading } = useQuery<
-    ExtendedResponse[]
-  >({
+  const { data: responses, isLoading: responsesLoading } = useQuery<ExtendedResponse[]>({
     queryKey: [`/api/surveys/${surveyId}/responses`],
     enabled: !!surveyId,
     queryFn: async () => {
@@ -140,19 +132,12 @@ export default function Analytics({ params }: { params: { id: string } }) {
     queryKey: [`/api/surveys/${surveyId}/insights`],
     enabled: !!surveyId && responses ? responses.length > 0 : false,
     queryFn: async () => {
-      console.log(
-        "Insights query enabled:",
-        !!surveyId && responses ? responses.length > 0 : false,
-      );
-      console.log("Survey ID:", surveyId);
-      console.log("Response count:", responses?.length);
       const res = await fetch(`/api/surveys/${surveyId}/insights`);
       if (!res.ok) throw new Error("Failed to fetch insights");
-      const data = await res.json();
-      console.log("Raw insights response:", data);
-      return data;
+      return res.json();
     },
   });
+
   const generateInsightsMutation = useMutation({
     mutationFn: async () => {
       if (!surveyId) return;
@@ -172,8 +157,6 @@ export default function Analytics({ params }: { params: { id: string } }) {
         title: "Success",
         description: "AI insights have been generated successfully.",
       });
-      // Only set tab once, after data is ready
-      setCurrentTab("insights");
     },
     onError: (error) => {
       toast({
@@ -186,55 +169,6 @@ export default function Analytics({ params }: { params: { id: string } }) {
       });
     },
   });
-
-  // Add loading state check
-  const isLoading = surveyLoading || responsesLoading || insightsLoading || generateInsightsMutation.isPending;
-
-  // Log detailed insights state
-  console.log('Insights Query State:', {
-    data: insights,
-    isLoading: insightsLoading,
-    isFetching: insightsLoading,
-    error: null
-  });
-
-  // Show loading state while generating insights
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-8 w-8 animate-spin text-border" />
-      </div>
-    );
-  }
-
-  // If no valid survey ID, show error
-  if (!surveyId) {
-    return (
-      <div className="container max-w-6xl py-8">
-        <Card>
-          <CardHeader>
-            <CardTitle>Invalid Survey</CardTitle>
-            <CardDescription>No valid survey ID provided.</CardDescription>
-          </CardHeader>
-        </Card>
-      </div>
-    );
-  }
-
-  if (!survey) {
-    return (
-      <div className="container max-w-6xl py-8">
-        <Card>
-          <CardHeader>
-            <CardTitle>Survey Not Found</CardTitle>
-            <CardDescription>
-              The survey you're looking for doesn't exist or has been removed.
-            </CardDescription>
-          </CardHeader>
-        </Card>
-      </div>
-    );
-  }
 
   const getQuestionStats = (questionId: string) => {
     if (!responses || !survey?.questions) return [];
@@ -313,6 +247,44 @@ export default function Analytics({ params }: { params: { id: string } }) {
     }
   };
 
+  // If no valid survey ID, show error
+  if (!surveyId) {
+    return (
+      <div className="container max-w-6xl py-8">
+        <Card>
+          <CardHeader>
+            <CardTitle>Invalid Survey</CardTitle>
+            <CardDescription>No valid survey ID provided.</CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
+    );
+  }
+
+  if (surveyLoading || responsesLoading || insightsLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-border" />
+      </div>
+    );
+  }
+
+  if (!survey) {
+    return (
+      <div className="container max-w-6xl py-8">
+        <Card>
+          <CardHeader>
+            <CardTitle>Survey Not Found</CardTitle>
+            <CardDescription>
+              The survey you're looking for doesn't exist or has been removed.
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
+    );
+  }
+
+
   return (
     <div className="container max-w-6xl py-8">
       <div className="flex items-center space-x-4 mb-8">
@@ -369,7 +341,7 @@ export default function Analytics({ params }: { params: { id: string } }) {
         </Card>
       </div>
 
-      <Tabs defaultValue="responses" value={currentTab} onValueChange={setCurrentTab}>
+      <Tabs defaultValue="responses">
         <TabsList>
           <TabsTrigger value="responses">
             <MessageSquare className="w-4 h-4 mr-2" />
