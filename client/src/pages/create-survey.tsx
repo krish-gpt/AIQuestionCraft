@@ -40,16 +40,17 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import {
-  DragDropContext,
-  Droppable,
-  Draggable,
-} from "@hello-pangea/dnd";
-import { Loader2, GripVertical, Wand2, Plus, Trash2, ArrowLeft, Eye } from "lucide-react";
-import {
-  RadioGroup,
-  RadioGroupItem,
-} from "@/components/ui/radio-group";
+  Loader2,
+  GripVertical,
+  Wand2,
+  Plus,
+  Trash2,
+  ArrowLeft,
+  Eye,
+} from "lucide-react";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 
 export default function CreateSurvey() {
@@ -91,7 +92,8 @@ export default function CreateSurvey() {
     onError: (error) => {
       toast({
         title: "Error creating survey",
-        description: error instanceof Error ? error.message : "Failed to create survey",
+        description:
+          error instanceof Error ? error.message : "Failed to create survey",
         variant: "destructive",
       });
     },
@@ -119,11 +121,9 @@ export default function CreateSurvey() {
 
     setIsGenerating(true);
     try {
-      const res = await apiRequest(
-        "POST",
-        "/api/generate-questions",
-        { topic: form.getValues("title") }
-      );
+      const res = await apiRequest("POST", "/api/generate-questions", {
+        topic: form.getValues("title"),
+      });
       if (!res.ok) {
         const error = await res.json();
         throw new Error(error.message || "Failed to generate questions");
@@ -134,7 +134,10 @@ export default function CreateSurvey() {
       console.error("Generation error:", error);
       toast({
         title: "Generation failed",
-        description: error instanceof Error ? error.message : "Failed to generate questions",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Failed to generate questions",
         variant: "destructive",
       });
     } finally {
@@ -219,7 +222,11 @@ export default function CreateSurvey() {
   return (
     <div className="container max-w-5xl py-8">
       <Form {...form}>
-        <form onSubmit={form.handleSubmit((data) => createSurveyMutation.mutate(data))}>
+        <form
+          onSubmit={form.handleSubmit((data) =>
+            createSurveyMutation.mutate(data),
+          )}
+        >
           <div className="space-y-8">
             <div className="flex items-center space-x-4 mb-8">
               <Button variant="ghost" size="icon" asChild>
@@ -264,7 +271,10 @@ export default function CreateSurvey() {
                       <FormItem>
                         <FormLabel>Description</FormLabel>
                         <FormControl>
-                          <Textarea {...field} className="min-h-[100px] text-lg" />
+                          <Textarea
+                            {...field}
+                            className="min-h-[100px] text-lg"
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -315,7 +325,9 @@ export default function CreateSurvey() {
                           {form.watch("questions")?.map((_, index) => (
                             <Draggable
                               key={form.getValues(`questions.${index}.id`)}
-                              draggableId={form.getValues(`questions.${index}.id`)}
+                              draggableId={form.getValues(
+                                `questions.${index}.id`,
+                              )}
                               index={index}
                             >
                               {(provided) => (
@@ -338,7 +350,10 @@ export default function CreateSurvey() {
                                         <FormItem>
                                           <FormLabel>Question Text</FormLabel>
                                           <FormControl>
-                                            <Input {...field} className="text-lg" />
+                                            <Input
+                                              {...field}
+                                              className="text-lg"
+                                            />
                                           </FormControl>
                                           <FormMessage />
                                         </FormItem>
@@ -361,9 +376,15 @@ export default function CreateSurvey() {
                                                 </SelectTrigger>
                                               </FormControl>
                                               <SelectContent>
-                                                <SelectItem value="text">Text</SelectItem>
-                                                <SelectItem value="multiple_choice">Multiple Choice</SelectItem>
-                                                <SelectItem value="rating">Rating</SelectItem>
+                                                <SelectItem value="text">
+                                                  Text
+                                                </SelectItem>
+                                                <SelectItem value="multiple_choice">
+                                                  Multiple Choice
+                                                </SelectItem>
+                                                <SelectItem value="rating">
+                                                  Rating
+                                                </SelectItem>
                                               </SelectContent>
                                             </Select>
                                             <FormMessage />
@@ -376,7 +397,8 @@ export default function CreateSurvey() {
                                         size="icon"
                                         className="text-destructive mt-8"
                                         onClick={() => {
-                                          const questions = form.getValues("questions");
+                                          const questions =
+                                            form.getValues("questions");
                                           questions.splice(index, 1);
                                           form.setValue("questions", questions);
                                         }}
@@ -384,22 +406,27 @@ export default function CreateSurvey() {
                                         <Trash2 className="h-5 w-5" />
                                       </Button>
                                     </div>
-                                    {form.watch(`questions.${index}.type`) === "multiple_choice" && (
+                                    {form.watch(`questions.${index}.type`) ===
+                                      "multiple_choice" && (
                                       <FormField
                                         control={form.control}
                                         name={`questions.${index}.options`}
                                         render={({ field }) => (
                                           <FormItem>
-                                            <FormLabel>Options (one per line)</FormLabel>
+                                            <FormLabel>
+                                              Options (one per line)
+                                            </FormLabel>
                                             <FormControl>
                                               <Textarea
                                                 {...field}
-                                                value={(field.value || []).join("\n")}
+                                                value={(field.value || []).join(
+                                                  "\n",
+                                                )}
                                                 onChange={(e) =>
                                                   field.onChange(
                                                     e.target.value
                                                       .split("\n")
-                                                      .filter(Boolean)
+                                                      .filter(Boolean),
                                                   )
                                                 }
                                                 className="min-h-[120px] text-lg"
