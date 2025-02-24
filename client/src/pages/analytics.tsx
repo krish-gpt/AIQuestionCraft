@@ -314,23 +314,13 @@ export default function Analytics({ params }: { params: { id: string } }) {
         </Button>
       </div>
 
-      <div className="grid gap-8 grid-cols-1 md:grid-cols-3 mb-8">
+      <div className="grid gap-8 grid-cols-1 md:grid-cols-2 mb-8">
         <Card>
           <CardHeader>
             <CardTitle>Total Responses</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-3xl font-bold">{responses?.length || 0}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>Average Sentiment</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-3xl font-bold">
-              {calculateAverageSentiment(responses)} / 5
-            </p>
           </CardContent>
         </Card>
         <Card>
@@ -351,21 +341,112 @@ export default function Analytics({ params }: { params: { id: string } }) {
         </Card>
       </div>
 
-      <Tabs defaultValue="insights">
+      <Tabs defaultValue="responses">
         <TabsList>
-          <TabsTrigger value="insights">
-            <Brain className="w-4 h-4 mr-2" />
-            AI Insights
+          <TabsTrigger value="responses">
+            <MessageSquare className="w-4 h-4 mr-2" />
+            Individual Responses
           </TabsTrigger>
           <TabsTrigger value="charts">
             <TrendingUp className="w-4 h-4 mr-2" />
             Charts
           </TabsTrigger>
-          <TabsTrigger value="responses">
-            <MessageSquare className="w-4 h-4 mr-2" />
-            Individual Responses
+          <TabsTrigger value="insights">
+            <Brain className="w-4 h-4 mr-2" />
+            AI Insights
           </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="responses">
+          <Card>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Submitted At</TableHead>
+                    <TableHead>Sentiment</TableHead>
+                    {survey?.questions.map((question) => (
+                      <TableHead key={question.id}>{question.text}</TableHead>
+                    ))}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {responses?.map((response) => (
+                    <TableRow key={response.id}>
+                      <TableCell>
+                        {format(new Date(response.submittedAt), "PPp")}
+                      </TableCell>
+                      <TableCell>
+                        {response.sentiment ? (
+                          <span>
+                            {response.sentiment.rating} / 5
+                            <span className="text-xs text-muted-foreground ml-1">
+                              (
+                              {(response.sentiment.confidence * 100).toFixed(0)}
+                              % confidence)
+                            </span>
+                          </span>
+                        ) : (
+                          "N/A"
+                        )}
+                      </TableCell>
+                      {survey?.questions.map((question) => (
+                        <TableCell key={question.id}>
+                          {response.answers[question.id]}
+                        </TableCell>
+                      ))}
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="charts" className="space-y-8">
+          {!responses?.length ? (
+            <Card>
+              <CardContent className="py-8">
+                <div className="text-center text-muted-foreground">
+                  No responses yet to generate charts.
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            survey?.questions
+              ?.filter(
+                (q) => q.type === "multiple_choice" || q.type === "rating",
+              )
+              .map((question) => {
+                const data = getQuestionStats(question.id);
+                return (
+                  <Card key={question.id}>
+                    <CardHeader>
+                      <CardTitle>{question.text}</CardTitle>
+                      <CardDescription>
+                        {question.type === "rating"
+                          ? "Rating distribution"
+                          : "Response distribution"}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="h-[300px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart data={data}>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="name" />
+                            <YAxis allowDecimals={false} />
+                            <Tooltip />
+                            <Bar dataKey="value" fill="hsl(var(--primary))" />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })
+          )}
+        </TabsContent>
 
         <TabsContent value="insights" className="space-y-8">
           {!responses?.length ? (
@@ -429,6 +510,25 @@ export default function Analytics({ params }: { params: { id: string } }) {
                   )}
                 </Button>
               </div>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Overall Sentiment</CardTitle>
+                  <CardDescription>
+                    AI-powered analysis of response sentiments
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Alert>
+                    <AlertTitle>Average Sentiment</AlertTitle>
+                    <AlertDescription>
+                      Average Rating: {calculateAverageSentiment(responses)} / 5
+                      <br />
+                      Based on {responses?.length || 0} responses
+                    </AlertDescription>
+                  </Alert>
+                </CardContent>
+              </Card>
 
               <Card>
                 <CardHeader>
@@ -589,97 +689,6 @@ export default function Analytics({ params }: { params: { id: string } }) {
               </Card>
             </>
           )}
-        </TabsContent>
-
-        <TabsContent value="charts" className="space-y-8">
-          {!responses?.length ? (
-            <Card>
-              <CardContent className="py-8">
-                <div className="text-center text-muted-foreground">
-                  No responses yet to generate charts.
-                </div>
-              </CardContent>
-            </Card>
-          ) : (
-            survey?.questions
-              ?.filter(
-                (q) => q.type === "multiple_choice" || q.type === "rating",
-              )
-              .map((question) => {
-                const data = getQuestionStats(question.id);
-                return (
-                  <Card key={question.id}>
-                    <CardHeader>
-                      <CardTitle>{question.text}</CardTitle>
-                      <CardDescription>
-                        {question.type === "rating"
-                          ? "Rating distribution"
-                          : "Response distribution"}
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="h-[300px]">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <BarChart data={data}>
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="name" />
-                            <YAxis allowDecimals={false} />
-                            <Tooltip />
-                            <Bar dataKey="value" fill="hsl(var(--primary))" />
-                          </BarChart>
-                        </ResponsiveContainer>
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })
-          )}
-        </TabsContent>
-
-        <TabsContent value="responses">
-          <Card>
-            <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Submitted At</TableHead>
-                    <TableHead>Sentiment</TableHead>
-                    {survey?.questions.map((question) => (
-                      <TableHead key={question.id}>{question.text}</TableHead>
-                    ))}
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {responses?.map((response) => (
-                    <TableRow key={response.id}>
-                      <TableCell>
-                        {format(new Date(response.submittedAt), "PPp")}
-                      </TableCell>
-                      <TableCell>
-                        {response.sentiment ? (
-                          <span>
-                            {response.sentiment.rating} / 5
-                            <span className="text-xs text-muted-foreground ml-1">
-                              (
-                              {(response.sentiment.confidence * 100).toFixed(0)}
-                              % confidence)
-                            </span>
-                          </span>
-                        ) : (
-                          "N/A"
-                        )}
-                      </TableCell>
-                      {survey?.questions.map((question) => (
-                        <TableCell key={question.id}>
-                          {response.answers[question.id]}
-                        </TableCell>
-                      ))}
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
         </TabsContent>
       </Tabs>
     </div>
