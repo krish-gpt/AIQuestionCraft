@@ -156,7 +156,6 @@ export default function Analytics({ params }: { params: { id: string } }) {
   const generateInsightsMutation = useMutation({
     mutationFn: async () => {
       if (!surveyId) return;
-      setCurrentTab("insights"); // Switch to insights tab when starting generation
       const res = await fetch(`/api/surveys/${surveyId}/insights`, {
         method: "POST",
       });
@@ -173,7 +172,8 @@ export default function Analytics({ params }: { params: { id: string } }) {
         title: "Success",
         description: "AI insights have been generated successfully.",
       });
-      setCurrentTab("insights"); // Ensure we stay on insights tab after success
+      // Only set tab once, after data is ready
+      setCurrentTab("insights");
     },
     onError: (error) => {
       toast({
@@ -186,6 +186,55 @@ export default function Analytics({ params }: { params: { id: string } }) {
       });
     },
   });
+
+  // Add loading state check
+  const isLoading = surveyLoading || responsesLoading || insightsLoading || generateInsightsMutation.isPending;
+
+  // Log detailed insights state
+  console.log('Insights Query State:', {
+    data: insights,
+    isLoading: insightsLoading,
+    isFetching: insightsLoading,
+    error: null
+  });
+
+  // Show loading state while generating insights
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-border" />
+      </div>
+    );
+  }
+
+  // If no valid survey ID, show error
+  if (!surveyId) {
+    return (
+      <div className="container max-w-6xl py-8">
+        <Card>
+          <CardHeader>
+            <CardTitle>Invalid Survey</CardTitle>
+            <CardDescription>No valid survey ID provided.</CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
+    );
+  }
+
+  if (!survey) {
+    return (
+      <div className="container max-w-6xl py-8">
+        <Card>
+          <CardHeader>
+            <CardTitle>Survey Not Found</CardTitle>
+            <CardDescription>
+              The survey you're looking for doesn't exist or has been removed.
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
+    );
+  }
 
   const getQuestionStats = (questionId: string) => {
     if (!responses || !survey?.questions) return [];
@@ -263,43 +312,6 @@ export default function Analytics({ params }: { params: { id: string } }) {
         return "→";
     }
   };
-
-  // If no valid survey ID, show error
-  if (!surveyId) {
-    return (
-      <div className="container max-w-6xl py-8">
-        <Card>
-          <CardHeader>
-            <CardTitle>Invalid Survey</CardTitle>
-            <CardDescription>No valid survey ID provided.</CardDescription>
-          </CardHeader>
-        </Card>
-      </div>
-    );
-  }
-
-  if (surveyLoading || responsesLoading || insightsLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-8 w-8 animate-spin text-border" />
-      </div>
-    );
-  }
-
-  if (!survey) {
-    return (
-      <div className="container max-w-6xl py-8">
-        <Card>
-          <CardHeader>
-            <CardTitle>Survey Not Found</CardTitle>
-            <CardDescription>
-              The survey you're looking for doesn't exist or has been removed.
-            </CardDescription>
-          </CardHeader>
-        </Card>
-      </div>
-    );
-  }
 
   return (
     <div className="container max-w-6xl py-8">
