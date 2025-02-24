@@ -112,6 +112,7 @@ export default function Analytics({ params }: { params: { id: string } }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const surveyId = params?.id ? parseInt(params.id) : null;
+  const [currentTab, setCurrentTab] = useState("responses");
 
   const { data: survey, isLoading: surveyLoading } = useQuery<Survey>({
     queryKey: [`/api/surveys/${surveyId}`],
@@ -139,26 +140,23 @@ export default function Analytics({ params }: { params: { id: string } }) {
     queryKey: [`/api/surveys/${surveyId}/insights`],
     enabled: !!surveyId && responses ? responses.length > 0 : false,
     queryFn: async () => {
-      console.log('Insights query enabled:', !!surveyId && responses ? responses.length > 0 : false);
-      console.log('Survey ID:', surveyId);
-      console.log('Response count:', responses?.length);
-
+      console.log(
+        "Insights query enabled:",
+        !!surveyId && responses ? responses.length > 0 : false,
+      );
+      console.log("Survey ID:", surveyId);
+      console.log("Response count:", responses?.length);
       const res = await fetch(`/api/surveys/${surveyId}/insights`);
       if (!res.ok) throw new Error("Failed to fetch insights");
-
       const data = await res.json();
-      console.log('Raw insights response:', data);
+      console.log("Raw insights response:", data);
       return data;
     },
   });
-
-  // Log after query definition
-  console.log('Current insights state:', insights);
-  console.log('Insights loading:', insightsLoading);
-
   const generateInsightsMutation = useMutation({
     mutationFn: async () => {
       if (!surveyId) return;
+      setCurrentTab("insights"); // Switch to insights tab when starting generation
       const res = await fetch(`/api/surveys/${surveyId}/insights`, {
         method: "POST",
       });
@@ -175,6 +173,7 @@ export default function Analytics({ params }: { params: { id: string } }) {
         title: "Success",
         description: "AI insights have been generated successfully.",
       });
+      setCurrentTab("insights"); // Ensure we stay on insights tab after success
     },
     onError: (error) => {
       toast({
@@ -358,7 +357,7 @@ export default function Analytics({ params }: { params: { id: string } }) {
         </Card>
       </div>
 
-      <Tabs defaultValue="responses">
+      <Tabs defaultValue="responses" value={currentTab} onValueChange={setCurrentTab}>
         <TabsList>
           <TabsTrigger value="responses">
             <MessageSquare className="w-4 h-4 mr-2" />
