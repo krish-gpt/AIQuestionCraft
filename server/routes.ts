@@ -108,15 +108,29 @@ export function registerRoutes(app: Express): Server {
 
   // Enhanced Analysis routes
   app.post("/api/surveys/:id/insights", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
+    console.log('Insights request received for survey:', req.params.id);
+
+    if (!req.isAuthenticated()) {
+      console.log('Unauthorized insights request');
+      return res.sendStatus(401);
+    }
 
     try {
       const survey = await storage.getSurvey(Number(req.params.id)) as Survey;
-      if (!survey) return res.sendStatus(404);
-      if (survey.userId !== req.user!.id) return res.sendStatus(403);
+      if (!survey) {
+        console.log('Survey not found:', req.params.id);
+        return res.sendStatus(404);
+      }
+      if (survey.userId !== req.user!.id) {
+        console.log('Unauthorized access - user mismatch');
+        return res.sendStatus(403);
+      }
 
       const responses = await storage.getResponsesBySurvey(survey.id) as Response[];
+      console.log(`Found ${responses.length} responses for analysis`);
+
       if (!responses.length) {
+        console.log('No responses to analyze');
         return res.status(400).json({ message: "No responses to analyze" });
       }
 
@@ -160,7 +174,7 @@ export function registerRoutes(app: Express): Server {
         trends,
       };
 
-      console.log('Sending insights response');
+      console.log('Sending insights response:', insights);
       res.json(insights);
     } catch (err) {
       console.error("Analysis error:", err);
