@@ -91,12 +91,17 @@ interface ExtendedResponse extends Omit<Response, "answers" | "sentiment"> {
   sentiment?: ResponseSentiment;
 }
 
-const calculateAverageSentiment = (responses: ExtendedResponse[] | undefined): number => {
+const calculateAverageSentiment = (
+  responses: ExtendedResponse[] | undefined,
+): number => {
   if (!responses || responses.length === 0) return 0;
 
   const total = responses.reduce((sum, response) => {
     // Ensure we have a number, defaulting to 0 if sentiment or rating is undefined
-    const rating = typeof response.sentiment?.rating === 'number' ? response.sentiment?.rating : 0;
+    const rating =
+      typeof response.sentiment?.rating === "number"
+        ? response.sentiment?.rating
+        : 0;
     return sum + rating;
   }, 0);
 
@@ -118,7 +123,9 @@ export default function Analytics({ params }: { params: { id: string } }) {
     },
   });
 
-  const { data: responses, isLoading: responsesLoading } = useQuery<ExtendedResponse[]>({
+  const { data: responses, isLoading: responsesLoading } = useQuery<
+    ExtendedResponse[]
+  >({
     queryKey: [`/api/surveys/${surveyId}/responses`],
     enabled: !!surveyId,
     queryFn: async () => {
@@ -128,14 +135,10 @@ export default function Analytics({ params }: { params: { id: string } }) {
     },
   });
 
+  // Remove automatic insights query and only fetch when needed
   const { data: insights, isLoading: insightsLoading } = useQuery<InsightData>({
     queryKey: [`/api/surveys/${surveyId}/insights`],
-    enabled: !!surveyId && responses ? responses.length > 0 : false,
-    queryFn: async () => {
-      const res = await fetch(`/api/surveys/${surveyId}/insights`);
-      if (!res.ok) throw new Error("Failed to fetch insights");
-      return res.json();
-    },
+    enabled: false, // Don't fetch automatically
   });
 
   const generateInsightsMutation = useMutation({
@@ -149,10 +152,9 @@ export default function Analytics({ params }: { params: { id: string } }) {
       }
       return res.json();
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: [`/api/surveys/${surveyId}/insights`],
-      });
+    onSuccess: (data) => {
+      // Update the insights cache with the new data
+      queryClient.setQueryData([`/api/surveys/${surveyId}/insights`], data);
       toast({
         title: "Success",
         description: "AI insights have been generated successfully.",
@@ -284,7 +286,6 @@ export default function Analytics({ params }: { params: { id: string } }) {
     );
   }
 
-
   return (
     <div className="container max-w-6xl py-8">
       <div className="flex items-center space-x-4 mb-8">
@@ -341,7 +342,7 @@ export default function Analytics({ params }: { params: { id: string } }) {
         </Card>
       </div>
 
-      <Tabs defaultValue="responses">
+      <Tabs defaultValue="insights">
         <TabsList>
           <TabsTrigger value="responses">
             <MessageSquare className="w-4 h-4 mr-2" />
