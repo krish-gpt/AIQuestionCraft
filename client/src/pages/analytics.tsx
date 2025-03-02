@@ -47,7 +47,7 @@ interface SurveyAnswers {
 interface TrendAnalysis {
   overall_trends?: Array<{
     topic: string;
-    trend: 'increasing' | 'decreasing' | 'stable';
+    trend: "increasing" | "decreasing" | "stable";
     significance: number;
     supporting_evidence: string[];
   }>;
@@ -246,80 +246,6 @@ export default function Analytics({ params }: { params: { id: string } }) {
     },
   });
 
-  const getQuestionStats = (questionId: string) => {
-    if (!responses || !survey?.questions) return [];
-
-    const question = survey.questions.find((q) => q.id === questionId);
-    if (!question) return [];
-
-    if (question.type === "multiple_choice" && Array.isArray(question.options)) {
-      const counts: Record<string, number> = {};
-      question.options.forEach((option) => {
-        if (typeof option === 'string') {
-          counts[option] = 0;
-        }
-      });
-
-      responses.forEach((response) => {
-        const answer = response?.answers?.[questionId];
-        if (answer && typeof answer === "string" && counts.hasOwnProperty(answer)) {
-          counts[answer] += 1;
-        }
-      });
-
-      return Object.entries(counts).map(([name, value]) => ({
-        name,
-        value,
-      }));
-    }
-
-    if (question.type === "rating") {
-      const counts: Record<string, number> = {};
-      for (let i = 1; i <= 5; i++) {
-        counts[i.toString()] = 0;
-      }
-
-      responses.forEach((response) => {
-        const answer = response?.answers?.[questionId];
-        if (answer && typeof answer === "string" && /^[1-5]$/.test(answer)) {
-          counts[answer] = (counts[answer] || 0) + 1;
-        }
-      });
-
-      return Array.from({ length: 5 }, (_, i) => i + 1).map((rating) => ({
-        name: rating.toString(),
-        value: counts[rating.toString()] || 0,
-      }));
-    }
-
-    return [];
-  };
-
-  const getSentimentColor = (sentiment: string | undefined): string => {
-    if (!sentiment) return "bg-gray-100 text-gray-800";
-
-    switch (sentiment.toLowerCase()) {
-      case "positive":
-        return "bg-green-100 text-green-800";
-      case "negative":
-        return "bg-red-100 text-red-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
-
-  const getTrendIcon = (trend: string | undefined): string => {
-    if (!trend) return "→";
-
-    switch (trend.toLowerCase()) {
-      case "increasing":
-        return "↗";
-      case "decreasing":
-        return "↘";
-      default:
-        return "→";
-    }
-  };
 
   if (!surveyId) {
     return (
@@ -610,26 +536,39 @@ export default function Analytics({ params }: { params: { id: string } }) {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  {insights?.trends?.overall_trends && Array.isArray(insights.trends.overall_trends) && insights.trends.overall_trends.length > 0 ? (
+                  {insights?.trends?.overall_trends &&
+                    Array.isArray(insights.trends.overall_trends) &&
+                    insights.trends.overall_trends.length > 0 ? (
                     <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
                       {insights.trends.overall_trends.map((trend, idx) => {
                         if (!trend) return null;
 
                         return (
-                          <div key={idx} className="border rounded-lg p-4 space-y-2">
+                          <div
+                            key={idx}
+                            className="border rounded-lg p-4 space-y-2"
+                          >
                             <div className="flex items-center justify-between">
-                              <p className="font-medium">{trend.topic || 'Unknown Topic'}</p>
+                              <p className="font-medium">
+                                {trend.topic || "Unknown Topic"}
+                              </p>
                               <span className="text-lg">
                                 {getTrendIcon(trend.trend)}
                               </span>
                             </div>
                             <div className="space-y-1">
-                              {Array.isArray(trend.supporting_evidence) && trend.supporting_evidence.length > 0 ? (
-                                trend.supporting_evidence.map((evidence, evidenceIdx) => (
-                                  <p key={evidenceIdx} className="text-sm text-muted-foreground">
-                                    • {evidence}
-                                  </p>
-                                ))
+                              {Array.isArray(trend.supporting_evidence) &&
+                                trend.supporting_evidence.length > 0 ? (
+                                trend.supporting_evidence.map(
+                                  (evidence, evidenceIdx) => (
+                                    <p
+                                      key={evidenceIdx}
+                                      className="text-sm text-muted-foreground"
+                                    >
+                                      • {evidence}
+                                    </p>
+                                  ),
+                                )
                               ) : (
                                 <p className="text-sm text-muted-foreground">
                                   No supporting evidence available
@@ -649,33 +588,39 @@ export default function Analytics({ params }: { params: { id: string } }) {
                     </Alert>
                   )}
 
-                  {Array.isArray(insights?.trends?.key_insights) && insights.trends.key_insights.length > 0 && (
-                    <div>
-                      <h3 className="text-lg font-semibold mb-2">Key Insights</h3>
-                      <div className="space-y-2">
-                        {insights.trends.key_insights.map((insight, idx) => (
-                          <Alert key={idx}>
-                            <AlertTitle>Insight {idx + 1}</AlertTitle>
-                            <AlertDescription>{insight}</AlertDescription>
-                          </Alert>
-                        ))}
+                  {Array.isArray(insights?.trends?.key_insights) &&
+                    insights.trends.key_insights.length > 0 && (
+                      <div>
+                        <h3 className="text-lg font-semibold mb-2">
+                          Key Insights
+                        </h3>
+                        <div className="space-y-2">
+                          {insights.trends.key_insights.map((insight, idx) => (
+                            <Alert key={idx}>
+                              <AlertTitle>Insight {idx + 1}</AlertTitle>
+                              <AlertDescription>{insight}</AlertDescription>
+                            </Alert>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
 
-                  {Array.isArray(insights?.trends?.recommendations) && insights.trends.recommendations.length > 0 && (
-                    <div>
-                      <h3 className="text-lg font-semibold mb-2">Recommendations</h3>
-                      <div className="space-y-2">
-                        {insights.trends.recommendations.map((rec, idx) => (
-                          <Alert key={idx}>
-                            <AlertTitle>Recommendation {idx + 1}</AlertTitle>
-                            <AlertDescription>{rec}</AlertDescription>
-                          </Alert>
-                        ))}
+                  {Array.isArray(insights?.trends?.recommendations) &&
+                    insights.trends.recommendations.length > 0 && (
+                      <div>
+                        <h3 className="text-lg font-semibold mb-2">
+                          Recommendations
+                        </h3>
+                        <div className="space-y-2">
+                          {insights.trends.recommendations.map((rec, idx) => (
+                            <Alert key={idx}>
+                              <AlertTitle>Recommendation {idx + 1}</AlertTitle>
+                              <AlertDescription>{rec}</AlertDescription>
+                            </Alert>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
                 </CardContent>
               </Card>
 
@@ -721,43 +666,45 @@ export default function Analytics({ params }: { params: { id: string } }) {
                             </div>
                           </div>
 
-                          {Array.isArray(response.sentiment.aspects) && response.sentiment.aspects.length > 0 && (
-                            <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
-                              {response.sentiment.aspects.map(
-                                (aspect, aspectIdx) => (
-                                  <div
-                                    key={aspectIdx}
-                                    className="border rounded-lg p-4 space-y-2"
-                                  >
-                                    <div className="flex items-center justify-between">
-                                      <p className="font-medium">
-                                        {aspect.category}
-                                      </p>
-                                      <span
-                                        className={`px-2 py-1 rounded-full text-xs ${getSentimentColor(
-                                          aspect.sentiment,
-                                        )}`}
-                                      >
-                                        {aspect.sentiment}
-                                      </span>
+                          {Array.isArray(response.sentiment.aspects) &&
+                            response.sentiment.aspects.length > 0 && (
+                              <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
+                                {response.sentiment.aspects.map(
+                                  (aspect, aspectIdx) => (
+                                    <div
+                                      key={aspectIdx}
+                                      className="border rounded-lg p-4 space-y-2"
+                                    >
+                                      <div className="flex items-center justify-between">
+                                        <p className="font-medium">
+                                          {aspect.category}
+                                        </p>
+                                        <span
+                                          className={`px-2 py-1 rounded-full text-xs ${getSentimentColor(
+                                            aspect.sentiment,
+                                          )}`}
+                                        >
+                                          {aspect.sentiment}
+                                        </span>
+                                      </div>
+                                      <div className="space-y-1">
+                                        {Array.isArray(aspect.key_phrases) &&
+                                          aspect.key_phrases.map(
+                                            (phrase, phraseIdx) => (
+                                              <p
+                                                key={phraseIdx}
+                                                className="text-sm text-muted-foreground"
+                                              >
+                                                • {phrase}
+                                              </p>
+                                            ),
+                                          )}
+                                      </div>
                                     </div>
-                                    <div className="space-y-1">
-                                      {Array.isArray(aspect.key_phrases) && aspect.key_phrases.map(
-                                        (phrase, phraseIdx) => (
-                                          <p
-                                            key={phraseIdx}
-                                            className="text-sm text-muted-foreground"
-                                          >
-                                            • {phrase}
-                                          </p>
-                                        ),
-                                      )}
-                                    </div>
-                                  </div>
-                                ),
-                              )}
-                            </div>
-                          )}
+                                  ),
+                                )}
+                              </div>
+                            )}
                         </div>
                       ),
                   )}
