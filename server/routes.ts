@@ -72,6 +72,9 @@ export function registerRoutes(app: Express): Server {
 
     const response = await storage.createResponse(parseResult.data) as Response;
 
+    // Commenting out automatic sentiment analysis on response submission
+    // Moving this functionality to be only available through the /insights endpoint
+    /*
     // Analyze sentiment for text responses
     const textAnswers = Object.entries(response.answers as Record<string, string>)
       .filter(([id]) => {
@@ -91,6 +94,7 @@ export function registerRoutes(app: Express): Server {
         console.error("Sentiment analysis error:", err);
       }
     }
+    */
 
     res.status(201).json(response);
   });
