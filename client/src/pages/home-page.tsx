@@ -26,7 +26,6 @@ import {
   ClipboardList,
   LogOut,
   Trash2,
-  Download,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -41,35 +40,6 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { apiRequest } from "@/lib/queryClient";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { exportSurveyData } from "@/lib/export-utils";
-
-//const exportToCSV = (survey: Survey) => {
-//  const headers = ['Title', 'Description', 'Status', 'Created At'];
-//  const data = [
-//    survey.title,
-//    survey.description,
-//    survey.isActive ? 'Active' : 'Closed',
-//    new Date(survey.createdAt).toLocaleDateString()
-//  ];
-//
-//  const csvContent = [
-//    headers.join(','),
-//    data.map(item => `"${String(item).replace(/"/g, '""')}"`).join(',')
-//  ].join('\n');
-//
-//  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-//  const link = document.createElement('a');
-//  link.href = URL.createObjectURL(blob);
-//  link.download = `survey_${survey.id}_details.csv`;
-//  link.click();
-//  URL.revokeObjectURL(link.href);
-//};
 
 export default function HomePage() {
   const { user, logoutMutation } = useAuth();
@@ -235,36 +205,6 @@ export default function HomePage() {
                         <Share2 className="h-4 w-4 mr-1" />
                         Share
                       </Button>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="inline-flex items-center"
-                          >
-                            <Download className="h-4 w-4 mr-1" />
-                            Export
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent>
-                          <DropdownMenuItem 
-                            onClick={() => exportSurveyData(survey, {
-                              format: 'csv',
-                              filename: `survey_${survey.id}_details`
-                            })}
-                          >
-                            Export as CSV
-                          </DropdownMenuItem>
-                          <DropdownMenuItem 
-                            onClick={() => exportSurveyData(survey, {
-                              format: 'json',
-                              filename: `survey_${survey.id}_details`
-                            })}
-                          >
-                            Export as JSON
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <Button

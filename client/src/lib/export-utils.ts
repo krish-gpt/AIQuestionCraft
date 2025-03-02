@@ -38,7 +38,12 @@ export const exportSurveyData = (survey: Survey, options: ExportOptions) => {
 
     downloadFile(csvContent, `${filename}.csv`, 'text/csv;charset=utf-8;');
   } else if (format === 'json') {
-    const jsonContent = JSON.stringify(survey, null, 2);
+    const jsonContent = JSON.stringify({
+      title: survey.title,
+      description: survey.description,
+      isActive: survey.isActive,
+      questions: survey.questions
+    }, null, 2);
     downloadFile(jsonContent, `${filename}.json`, 'application/json');
   }
 };
@@ -72,7 +77,18 @@ export const exportResponsesData = (responses: Response[], survey: Survey, optio
 
     downloadFile(csvContent, `${filename}.csv`, 'text/csv;charset=utf-8;');
   } else if (format === 'json') {
-    const jsonContent = JSON.stringify({ survey, responses }, null, 2);
+    // Simplified JSON format without sentiment and insights
+    const jsonContent = JSON.stringify({
+      survey: {
+        title: survey.title,
+        description: survey.description,
+        questions: survey.questions
+      },
+      responses: responses.map(response => ({
+        submittedAt: response.submittedAt,
+        answers: response.answers
+      }))
+    }, null, 2);
     downloadFile(jsonContent, `${filename}.json`, 'application/json');
   }
 };
