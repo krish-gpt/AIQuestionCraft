@@ -40,9 +40,19 @@ import {
 } from "lucide-react";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 
-// Define the structure of survey answers
 interface SurveyAnswers {
   [questionId: string]: string;
+}
+
+interface TrendAnalysis {
+  overall_trends?: {
+    topic: string;
+    trend: 'increasing' | 'decreasing' | 'stable';
+    significance: number;
+    supporting_evidence: string[];
+  }[];
+  key_insights?: string[];
+  recommendations?: string[];
 }
 
 interface InsightData {
@@ -57,16 +67,7 @@ interface InsightData {
     }[];
     summary: string;
   };
-  trends: {
-    overall_trends: {
-      topic: string;
-      trend: "increasing" | "decreasing" | "stable";
-      significance: number;
-      supporting_evidence: string[];
-    }[];
-    key_insights: string[];
-    recommendations: string[];
-  };
+  trends?: TrendAnalysis;
   overallSentiment?: {
     averageRating: number;
     responseCount: number;
@@ -85,7 +86,6 @@ interface ResponseSentiment {
   summary: string;
 }
 
-// Extend the Response type to include properly typed answers and sentiment
 interface ExtendedResponse extends Omit<Response, "answers" | "sentiment"> {
   answers: SurveyAnswers;
   sentiment?: ResponseSentiment;
@@ -97,7 +97,6 @@ const calculateAverageSentiment = (
   if (!responses || responses.length === 0) return 0;
 
   const total = responses.reduce((sum, response) => {
-    // Ensure we have a number, defaulting to 0 if sentiment or rating is undefined
     const rating =
       typeof response.sentiment?.rating === "number"
         ? response.sentiment?.rating
@@ -135,10 +134,9 @@ export default function Analytics({ params }: { params: { id: string } }) {
     },
   });
 
-  // Remove automatic insights query and only fetch when needed
   const { data: insights, isLoading: insightsLoading } = useQuery<InsightData>({
     queryKey: [`/api/surveys/${surveyId}/insights`],
-    enabled: false, // Don't fetch automatically
+    enabled: false,
   });
 
   const generateInsightsMutation = useMutation({
@@ -153,7 +151,6 @@ export default function Analytics({ params }: { params: { id: string } }) {
       return res.json();
     },
     onSuccess: (data) => {
-      // Update the insights cache with the new data
       queryClient.setQueryData([`/api/surveys/${surveyId}/insights`], data);
       toast({
         title: "Success",
@@ -178,16 +175,13 @@ export default function Analytics({ params }: { params: { id: string } }) {
     const question = survey.questions.find((q) => q.id === questionId);
     if (!question) return [];
 
-    // For multiple choice questions
     if (question.type === "multiple_choice" && question.options) {
       const counts: Record<string, number> = {};
 
-      // Initialize counts for all options
       question.options.forEach((option) => {
         counts[option] = 0;
       });
 
-      // Count responses
       responses.forEach((response) => {
         const answer = response.answers[questionId];
         if (answer && typeof answer === "string") {
@@ -201,16 +195,13 @@ export default function Analytics({ params }: { params: { id: string } }) {
       }));
     }
 
-    // For rating questions
     if (question.type === "rating") {
       const counts: Record<string, number> = {};
 
-      // Initialize counts for ratings 1-5
       for (let i = 1; i <= 5; i++) {
         counts[i.toString()] = 0;
       }
 
-      // Count responses
       responses.forEach((response) => {
         const answer = response.answers[questionId];
         if (answer && typeof answer === "string") {
@@ -249,7 +240,6 @@ export default function Analytics({ params }: { params: { id: string } }) {
     }
   };
 
-  // If no valid survey ID, show error
   if (!surveyId) {
     return (
       <div className="container max-w-6xl py-8">
@@ -539,35 +529,44 @@ export default function Analytics({ params }: { params: { id: string } }) {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
-                    {insights.trends.overall_trends.map((trend, idx) => (
-                      <div
-                        key={idx}
-                        className="border rounded-lg p-4 space-y-2"
-                      >
-                        <div className="flex items-center justify-between">
-                          <p className="font-medium">{trend.topic}</p>
-                          <span className="text-lg">
-                            {getTrendIcon(trend.trend)}
-                          </span>
+                  {insights?.trends?.overall_trends && insights.trends.overall_trends.length > 0 ? (
+                    <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
+                      {insights.trends.overall_trends.map((trend, idx) => (
+                        <div
+                          key={idx}
+                          className="border rounded-lg p-4 space-y-2"
+                        >
+                          <div className="flex items-center justify-between">
+                            <p className="font-medium">{trend?.topic || 'Unknown Topic'}</p>
+                            <span className="text-lg">
+                              {getTrendIcon(trend?.trend || 'stable')}
+                            </span>
+                          </div>
+                          <div className="space-y-1">
+                            {trend?.supporting_evidence?.map(
+                              (evidence, evidenceIdx) => (
+                                <p
+                                  key={evidenceIdx}
+                                  className="text-sm text-muted-foreground"
+                                >
+                                  • {evidence}
+                                </p>
+                              ),
+                            ) || <p className="text-sm text-muted-foreground">No supporting evidence available</p>}
+                          </div>
                         </div>
-                        <div className="space-y-1">
-                          {trend.supporting_evidence.map(
-                            (evidence, evidenceIdx) => (
-                              <p
-                                key={evidenceIdx}
-                                className="text-sm text-muted-foreground"
-                              >
-                                • {evidence}
-                              </p>
-                            ),
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <Alert>
+                      <AlertTitle>No Trends Available</AlertTitle>
+                      <AlertDescription>
+                        No trend data is currently available for analysis.
+                      </AlertDescription>
+                    </Alert>
+                  )}
 
-                  {insights.trends.key_insights &&
+                  {insights?.trends?.key_insights &&
                     insights.trends.key_insights.length > 0 && (
                       <div>
                         <h3 className="text-lg font-semibold mb-2">
@@ -584,7 +583,7 @@ export default function Analytics({ params }: { params: { id: string } }) {
                       </div>
                     )}
 
-                  {insights.trends.recommendations &&
+                  {insights?.trends?.recommendations &&
                     insights.trends.recommendations.length > 0 && (
                       <div>
                         <h3 className="text-lg font-semibold mb-2">
