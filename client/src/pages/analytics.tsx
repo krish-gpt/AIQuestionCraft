@@ -36,9 +36,17 @@ import {
   MessageSquare,
   Brain,
   ArrowLeft,
+  Download,
 } from "lucide-react";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { useState } from "react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { exportResponsesData } from "@/lib/export-utils";
 
 interface SurveyAnswers {
   [questionId: string]: string;
@@ -165,6 +173,7 @@ const getQuestionStats = (
 
   return [];
 };
+
 
 export default function Analytics({ params }: { params: { id: string } }) {
   const { toast } = useToast();
@@ -365,6 +374,43 @@ export default function Analytics({ params }: { params: { id: string } }) {
 
         <TabsContent value="responses">
           <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Individual Responses</CardTitle>
+                <CardDescription>View all responses for this survey</CardDescription>
+              </div>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="inline-flex items-center"
+                    disabled={!responses || responses.length === 0}
+                  >
+                    <Download className="h-4 w-4 mr-1" />
+                    Export
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem 
+                    onClick={() => responses && survey && exportResponsesData(responses, survey, {
+                      format: 'csv',
+                      filename: `survey_${survey.id}_responses`
+                    })}
+                  >
+                    Export as CSV
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    onClick={() => responses && survey && exportResponsesData(responses, survey, {
+                      format: 'json',
+                      filename: `survey_${survey.id}_responses`
+                    })}
+                  >
+                    Export as JSON
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </CardHeader>
             <CardContent className="p-0">
               <Table>
                 <TableHeader>
