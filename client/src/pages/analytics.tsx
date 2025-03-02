@@ -416,7 +416,6 @@ export default function Analytics({ params }: { params: { id: string } }) {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Submitted At</TableHead>
-                    <TableHead>Sentiment</TableHead>
                     {survey?.questions.map((question) => (
                       <TableHead key={question.id}>{question.text}</TableHead>
                     ))}
@@ -427,20 +426,6 @@ export default function Analytics({ params }: { params: { id: string } }) {
                     <TableRow key={response.id}>
                       <TableCell>
                         {format(new Date(response.submittedAt), "PPp")}
-                      </TableCell>
-                      <TableCell>
-                        {response.sentiment ? (
-                          <span>
-                            {response.sentiment.rating} / 5
-                            <span className="text-xs text-muted-foreground ml-1">
-                              (
-                              {(response.sentiment.confidence * 100).toFixed(0)}
-                              % confidence)
-                            </span>
-                          </span>
-                        ) : (
-                          "N/A"
-                        )}
                       </TableCell>
                       {survey?.questions.map((question) => (
                         <TableCell key={question.id}>
