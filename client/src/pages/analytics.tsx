@@ -36,6 +36,7 @@ import {
   MessageSquare,
   Brain,
   ArrowLeft,
+  Download,
 } from "lucide-react";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { useState } from "react";
@@ -164,6 +165,40 @@ const getQuestionStats = (
   }
 
   return [];
+};
+
+const exportResponsesToCSV = (responses: ExtendedResponse[], survey: Survey) => {
+  // Get all question texts as headers
+  const questionHeaders = survey.questions.map(q => q.text);
+  const headers = ['Submitted At', 'Sentiment Rating', 'Sentiment Confidence', ...questionHeaders];
+
+  // Prepare rows
+  const rows = responses.map(response => {
+    const submittedAt = new Date(response.submittedAt).toLocaleDateString();
+    const sentimentRating = response.sentiment?.rating || 'N/A';
+    const sentimentConfidence = response.sentiment 
+      ? `${(response.sentiment.confidence * 100).toFixed(0)}%`
+      : 'N/A';
+
+    // Get answers in the same order as questions
+    const answers = survey.questions.map(q => 
+      response.answers[q.id] ? `"${String(response.answers[q.id]).replace(/"/g, '""')}"` : ''
+    );
+
+    return [submittedAt, sentimentRating, sentimentConfidence, ...answers];
+  });
+
+  const csvContent = [
+    headers.map(h => `"${h.replace(/"/g, '""')}"`).join(','),
+    ...rows.map(row => row.join(','))
+  ].join('\n');
+
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = `survey_${survey.id}_responses.csv`;
+  link.click();
+  URL.revokeObjectURL(link.href);
 };
 
 export default function Analytics({ params }: { params: { id: string } }) {
@@ -365,6 +400,22 @@ export default function Analytics({ params }: { params: { id: string } }) {
 
         <TabsContent value="responses">
           <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Individual Responses</CardTitle>
+                <CardDescription>View all responses for this survey</CardDescription>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => responses && survey && exportResponsesToCSV(responses, survey)}
+                className="inline-flex items-center"
+                disabled={!responses || responses.length === 0}
+              >
+                <Download className="h-4 w-4 mr-1" />
+                Export CSV
+              </Button>
+            </CardHeader>
             <CardContent className="p-0">
               <Table>
                 <TableHeader>
