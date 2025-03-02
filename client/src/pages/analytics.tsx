@@ -38,6 +38,7 @@ import {
   ArrowLeft,
 } from "lucide-react";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { useState } from "react";
 
 interface SurveyAnswers {
   [questionId: string]: string;
@@ -169,6 +170,7 @@ export default function Analytics({ params }: { params: { id: string } }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const surveyId = params?.id ? parseInt(params.id) : null;
+  const [activeTab, setActiveTab] = useState("responses");
 
   const { data: survey, isLoading: surveyLoading } = useQuery<Survey>({
     queryKey: [`/api/surveys/${surveyId}`],
@@ -226,62 +228,6 @@ export default function Analytics({ params }: { params: { id: string } }) {
       });
     },
   });
-
-  // const getQuestionStats = (questionId: string) => {
-  //   if (!responses || !survey?.questions) return [];
-
-  //   const question = survey.questions.find((q) => q.id === questionId);
-  //   if (!question) return [];
-
-  //   if (
-  //     question.type === "multiple_choice" &&
-  //     Array.isArray(question.options)
-  //   ) {
-  //     const counts: Record<string, number> = {};
-  //     question.options.forEach((option) => {
-  //       if (typeof option === "string") {
-  //         counts[option] = 0;
-  //       }
-  //     });
-
-  //     responses.forEach((response) => {
-  //       const answer = response?.answers?.[questionId];
-  //       if (
-  //         answer &&
-  //         typeof answer === "string" &&
-  //         counts.hasOwnProperty(answer)
-  //       ) {
-  //         counts[answer] += 1;
-  //       }
-  //     });
-
-  //     return Object.entries(counts).map(([name, value]) => ({
-  //       name,
-  //       value,
-  //     }));
-  //   }
-
-  //   if (question.type === "rating") {
-  //     const counts: Record<string, number> = {};
-  //     for (let i = 1; i <= 5; i++) {
-  //       counts[i.toString()] = 0;
-  //     }
-
-  //     responses.forEach((response) => {
-  //       const answer = response?.answers?.[questionId];
-  //       if (answer && typeof answer === "string" && /^[1-5]$/.test(answer)) {
-  //         counts[answer] = (counts[answer] || 0) + 1;
-  //       }
-  //     });
-
-  //     return Array.from({ length: 5 }, (_, i) => i + 1).map((rating) => ({
-  //       name: rating.toString(),
-  //       value: counts[rating.toString()] || 0,
-  //     }));
-  //   }
-
-  //   return [];
-  // };
 
   const getSentimentColor = (sentiment: string | undefined): string => {
     if (!sentiment) return "bg-gray-100 text-gray-800";
@@ -401,7 +347,7 @@ export default function Analytics({ params }: { params: { id: string } }) {
         </Card>
       </div>
 
-      <Tabs defaultValue="insights">
+      <Tabs defaultValue={activeTab} onValueChange={setActiveTab}>
         <TabsList>
           <TabsTrigger value="responses">
             <MessageSquare className="w-4 h-4 mr-2" />
@@ -599,8 +545,8 @@ export default function Analytics({ params }: { params: { id: string } }) {
                 </CardHeader>
                 <CardContent className="space-y-6">
                   {insights?.trends?.overall_trends &&
-                  Array.isArray(insights.trends.overall_trends) &&
-                  insights.trends.overall_trends.length > 0 ? (
+                    Array.isArray(insights.trends.overall_trends) &&
+                    insights.trends.overall_trends.length > 0 ? (
                     <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
                       {insights.trends.overall_trends.map((trend, idx) => {
                         if (!trend) return null;
@@ -620,7 +566,7 @@ export default function Analytics({ params }: { params: { id: string } }) {
                             </div>
                             <div className="space-y-1">
                               {Array.isArray(trend.supporting_evidence) &&
-                              trend.supporting_evidence.length > 0 ? (
+                                trend.supporting_evidence.length > 0 ? (
                                 trend.supporting_evidence.map(
                                   (evidence, evidenceIdx) => (
                                     <p
