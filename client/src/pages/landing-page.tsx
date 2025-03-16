@@ -1,33 +1,67 @@
 import { Button } from "@/components/ui/button";
+import { LandingNav } from "@/components/landing-nav";
+import { Footer } from "@/components/footer";
 import { Link } from "wouter";
+import { ClipboardList } from "lucide-react";
 
 export default function LandingPage() {
   return (
-    <div className="container max-w-6xl py-12">
-      {/* Hero Section */}
-      <div className="text-center mb-16">
-        <h1 className="text-4xl font-bold mb-4">
-          Create and Analyze Surveys with AI
-        </h1>
-        <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-          Design intelligent surveys, gather responses, and get AI-powered
-          insights to make better decisions.
-        </p>
-      </div>
+    <div className="min-h-screen flex flex-col">
+      <LandingNav />
+      <main className="flex-1">
+        <div className="container mx-auto py-16 px-4">
+          <div className="max-w-3xl mx-auto text-center mb-12">
+            <h1 className="text-5xl font-bold mb-6">
+              Create Intelligent Surveys with AI
+            </h1>
+            <p className="text-xl text-muted-foreground mb-8">
+              Design smart surveys, gather responses, and get AI-powered insights
+              to make better decisions. Transform your feedback collection with
+              powerful analytics.
+            </p>
+            <Link href="/auth">
+              <Button size="lg" className="font-semibold">
+                Get Started
+              </Button>
+            </Link>
+          </div>
 
-      {/* Pricing Section with Stripe Pricing Table */}
-      <div className="text-center mb-8">
-        <h2 className="text-3xl font-bold mb-4">Choose Your Plan</h2>
-        <p className="text-lg text-muted-foreground mb-8">
-          Select the perfect plan for your survey needs
-        </p>
-
-        {/* @ts-ignore */}
-        <stripe-pricing-table
-          pricing-table-id="prctbl_1QxmeTJZmwspn7QsW5nq4XT9"
-          publishable-key="pk_live_51Qt0eyJZmwspn7Qs0vUGE1wrKDbZQ1zIA3xIKZ4Q5lGAmHPmu8xzdksKHpZ3Ts2lxKZvcCoh1uBbMINrhOHN0P7E00LToN2aRA">
-        </stripe-pricing-table>
-      </div>
+          {/* Features Section */}
+          <div className="grid gap-8 md:grid-cols-3 mt-16">
+            <div className="text-center p-6">
+              <div className="bg-primary/10 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4">
+                <ClipboardList className="w-6 h-6 text-primary" />
+              </div>
+              <h3 className="text-xl font-semibold mb-2">Smart Survey Creation</h3>
+              <p className="text-muted-foreground">
+                Generate engaging questions with AI assistance and create
+                professional surveys in minutes.
+              </p>
+            </div>
+            <div className="text-center p-6">
+              <div className="bg-primary/10 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4">
+                <ClipboardList className="w-6 h-6 text-primary" />
+              </div>
+              <h3 className="text-xl font-semibold mb-2">Advanced Analytics</h3>
+              <p className="text-muted-foreground">
+                Get detailed insights and sentiment analysis from your survey
+                responses automatically.
+              </p>
+            </div>
+            <div className="text-center p-6">
+              <div className="bg-primary/10 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4">
+                <ClipboardList className="w-6 h-6 text-primary" />
+              </div>
+              <h3 className="text-xl font-semibold mb-2">Real-time Results</h3>
+              <p className="text-muted-foreground">
+                Monitor responses and trends in real-time with our intuitive
+                dashboard.
+              </p>
+            </div>
+          </div>
+        </div>
+      </main>
+      <Footer />
     </div>
   );
 }
