@@ -51,6 +51,10 @@ export default function AuthPage() {
   const { toast } = useToast();
   const [resetToken, setResetToken] = React.useState<string | null>(null);
 
+  // Get the default tab from URL search params using window.location.search
+  const searchParams = new URLSearchParams(window.location.search);
+  const defaultTab = searchParams.get('tab') || 'login';
+
   const loginForm = useForm({
     resolver: zodResolver(insertUserSchema.omit({ email: true })),
     defaultValues: {
@@ -158,7 +162,7 @@ export default function AuthPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Tabs defaultValue="login">
+            <Tabs defaultValue={defaultTab}>
               <TabsList className="grid grid-cols-2 w-full">
                 <TabsTrigger value="login">Login</TabsTrigger>
                 <TabsTrigger value="register">Register</TabsTrigger>

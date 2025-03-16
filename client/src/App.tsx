@@ -11,6 +11,7 @@ import Survey from "@/pages/survey";
 import Analytics from "@/pages/analytics";
 import LandingPage from "@/pages/landing-page";
 import { ProtectedRoute } from "./lib/protected-route";
+import PricingPage from "./pages/pricing-page";
 
 function Router() {
   return (
@@ -18,6 +19,7 @@ function Router() {
       <Switch>
         <Route path="/" component={LandingPage} />
         <Route path="/auth" component={AuthPage} />
+        <Route path="/pricing" component={PricingPage} />
         <ProtectedRoute path="/dashboard" component={HomePage} />
         <ProtectedRoute path="/create" component={CreateSurvey} />
         <ProtectedRoute
