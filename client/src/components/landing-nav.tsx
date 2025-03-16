@@ -3,9 +3,9 @@ import { Button } from "@/components/ui/button";
 import {
   NavigationMenu,
   NavigationMenuItem,
-  NavigationMenuLink,
   NavigationMenuList,
 } from "@/components/ui/navigation-menu";
+import { cn } from "@/lib/utils";
 
 export function LandingNav() {
   return (
@@ -19,19 +19,21 @@ export function LandingNav() {
             <NavigationMenuList>
               <NavigationMenuItem>
                 <Link href="/pricing">
-                  <NavigationMenuLink className="group inline-flex h-10 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50 data-[active]:bg-accent/50 data-[state=open]:bg-accent/50">
+                  <a className={cn(
+                    "group inline-flex h-10 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50 data-[active]:bg-accent/50 data-[state=open]:bg-accent/50"
+                  )}>
                     Pricing
-                  </NavigationMenuLink>
+                  </a>
                 </Link>
               </NavigationMenuItem>
             </NavigationMenuList>
           </NavigationMenu>
         </div>
         <div className="flex items-center gap-4">
-          <Link href="/auth?tab=register">
+          <Link href="/auth?tab=login">
             <Button variant="outline">Sign in</Button>
           </Link>
-          <Link href="/auth?tab=login">
+          <Link href="/auth?tab=register">
             <Button>Get Started</Button>
           </Link>
         </div>
