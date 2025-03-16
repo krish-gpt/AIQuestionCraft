@@ -29,8 +29,11 @@ export default function PricingPage() {
               className="w-full min-h-[600px] border rounded-lg p-8"
             >
               <div className="text-center text-muted-foreground">
-                <p>Stripe Pricing Table will be displayed here</p>
-                <p className="text-sm mt-2">Configure your Stripe integration to see the pricing plans</p>
+                {/* @ts-ignore */}
+                <stripe-pricing-table
+                  pricing-table-id="prctbl_1QxmeTJZmwspn7QsW5nq4XT9"
+                  publishable-key="pk_live_51Qt0eyJZmwspn7Qs0vUGE1wrKDbZQ1zIA3xIKZ4Q5lGAmHPmu8xzdksKHpZ3Ts2lxKZvcCoh1uBbMINrhOHN0P7E00LToN2aRA"
+                ></stripe-pricing-table>
               </div>
             </div>
           </div>
