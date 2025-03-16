@@ -51,8 +51,9 @@ export default function AuthPage() {
   const { toast } = useToast();
   const [resetToken, setResetToken] = React.useState<string | null>(null);
   const [location] = useLocation();
-  // Get the default tab from URL search params
-  const searchParams = new URLSearchParams(location.split('?')[1]);
+
+  // Safely get the default tab from URL search params
+  const searchParams = new URLSearchParams(location?.includes('?') ? location.split('?')[1] : '');
   const defaultTab = searchParams.get('tab') || 'login';
 
   const loginForm = useForm({

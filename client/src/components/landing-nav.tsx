@@ -28,10 +28,10 @@ export function LandingNav() {
           </NavigationMenu>
         </div>
         <div className="flex items-center gap-4">
-          <Link href="/auth?tab=login">
+          <Link href="/auth?tab=register">
             <Button variant="outline">Sign in</Button>
           </Link>
-          <Link href="/auth?tab=register">
+          <Link href="/auth?tab=login">
             <Button>Get Started</Button>
           </Link>
         </div>
