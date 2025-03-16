@@ -28,7 +28,7 @@ import {
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertUserSchema } from "@shared/schema";
-import { Redirect, useLocation } from "wouter";
+import { Redirect } from "wouter";
 import { ClipboardList } from "lucide-react";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
@@ -50,10 +50,9 @@ export default function AuthPage() {
   const { user, loginMutation, registerMutation } = useAuth();
   const { toast } = useToast();
   const [resetToken, setResetToken] = React.useState<string | null>(null);
-  const [location] = useLocation();
 
-  // Safely get the default tab from URL search params
-  const searchParams = new URLSearchParams(location?.includes('?') ? location.split('?')[1] : '');
+  // Get the default tab from URL search params using window.location.search
+  const searchParams = new URLSearchParams(window.location.search);
   const defaultTab = searchParams.get('tab') || 'login';
 
   const loginForm = useForm({
