@@ -24,10 +24,10 @@ export interface IStorage {
 
   sessionStore: session.Store;
   getUserByEmail(email: string): Promise<User | undefined>;
-  setResetToken(userId: number, token: string, expiry: Date): Promise<void>;
-  getUserByResetToken(token: string): Promise<User | undefined>;
-  updateUserPassword(userId: number, newPassword: string): Promise<void>;
-  clearResetToken(userId: number): Promise<void>;
+  storeResetToken(email: string, token: string, expiry: Date): Promise<void>;
+  verifyResetToken(token: string): Promise<{ email: string; expiresAt: Date } | null>;
+  updateUserPassword(email: string, newPassword: string): Promise<void>;
+  clearResetToken(token: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -104,41 +104,49 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
-  async setResetToken(userId: number, token: string, expiry: Date): Promise<void> {
+  async storeResetToken(email: string, token: string, expiry: Date): Promise<void> {
     await db
       .update(users)
       .set({
         resetToken: token,
         resetTokenExpiry: expiry,
       })
-      .where(eq(users.id, userId));
+      .where(eq(users.email, email));
   }
 
-  async getUserByResetToken(token: string): Promise<User | undefined> {
+  async verifyResetToken(token: string): Promise<{ email: string; expiresAt: Date } | null> {
     const [user] = await db
-      .select()
+      .select({
+        email: users.email,
+        expiresAt: users.resetTokenExpiry,
+      })
       .from(users)
       .where(
         sql`${users.resetToken} = ${token} AND ${users.resetTokenExpiry} > NOW()`
       );
-    return user;
+
+    if (!user || !user.expiresAt) return null;
+    return {
+      email: user.email,
+      expiresAt: user.expiresAt,
+    };
   }
 
-  async updateUserPassword(userId: number, newPassword: string): Promise<void> {
+  async updateUserPassword(email: string, newPassword: string): Promise<void> {
     await db
       .update(users)
       .set({ password: newPassword })
-      .where(eq(users.id, userId));
+      .where(eq(users.email, email));
   }
 
-  async clearResetToken(userId: number): Promise<void> {
+  async clearResetToken(token: string): Promise<void> {
     await db
       .update(users)
       .set({
         resetToken: null,
         resetTokenExpiry: null,
       })
-      .where(eq(users.id, userId));
+      .where(eq(users.resetToken, token));
   }
 }
 

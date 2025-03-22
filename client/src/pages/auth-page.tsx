@@ -38,14 +38,18 @@ const resetPasswordSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
 });
 
-const confirmResetSchema = z.object({
-  token: z.string().min(1, "Reset token is required"),
-  newPassword: z.string().min(6, "Password must be at least 6 characters"),
-  confirmPassword: z.string().min(6, "Password must be at least 6 characters"),
-}).refine((data) => data.newPassword === data.confirmPassword, {
-  message: "Passwords do not match",
-  path: ["confirmPassword"],
-});
+const confirmResetSchema = z
+  .object({
+    token: z.string().min(1, "Reset token is required"),
+    newPassword: z.string().min(6, "Password must be at least 6 characters"),
+    confirmPassword: z
+      .string()
+      .min(6, "Password must be at least 6 characters"),
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
+  });
 
 type ResetPasswordData = z.infer<typeof resetPasswordSchema>;
 type ConfirmResetData = z.infer<typeof confirmResetSchema>;
@@ -57,7 +61,7 @@ export default function AuthPage() {
 
   // Get the default tab from URL search params using window.location.search
   const searchParams = new URLSearchParams(window.location.search);
-  const defaultTab = searchParams.get('tab') || 'login';
+  const defaultTab = searchParams.get("tab") || "login";
 
   const loginForm = useForm({
     resolver: zodResolver(insertUserSchema.omit({ email: true })),
@@ -86,7 +90,7 @@ export default function AuthPage() {
   const confirmResetForm = useForm({
     resolver: zodResolver(confirmResetSchema),
     defaultValues: {
-      token: searchParams.get('token') || "",
+      token: searchParams.get("token") || "",
       newPassword: "",
       confirmPassword: "",
     },
@@ -115,7 +119,10 @@ export default function AuthPage() {
     } catch (error) {
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to process reset request",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Failed to process reset request",
         variant: "destructive",
       });
     }
@@ -147,7 +154,8 @@ export default function AuthPage() {
     } catch (error) {
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to reset password",
+        description:
+          error instanceof Error ? error.message : "Failed to reset password",
         variant: "destructive",
       });
     }
@@ -172,7 +180,7 @@ export default function AuthPage() {
               <TabsList className="grid grid-cols-2 w-full">
                 <TabsTrigger value="login">Login</TabsTrigger>
                 <TabsTrigger value="register">Register</TabsTrigger>
-                <TabsTrigger value="reset">Reset Password</TabsTrigger>
+                {/* <TabsTrigger value="reset">Reset Password</TabsTrigger> */}
               </TabsList>
 
               <TabsContent value="login">
@@ -230,7 +238,8 @@ export default function AuthPage() {
                           <DialogHeader>
                             <DialogTitle>Reset Password</DialogTitle>
                             <DialogDescription>
-                              Enter your email address to receive a password reset link
+                              Enter your email address to receive a password
+                              reset link
                             </DialogDescription>
                           </DialogHeader>
                           <Form {...resetPasswordForm}>

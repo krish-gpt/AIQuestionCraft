@@ -15,11 +15,11 @@ export default function LandingPage() {
               Create Intelligent Surveys with AI
             </h1>
             <p className="text-xl text-muted-foreground mb-8">
-              Design smart surveys, gather responses, and get AI-powered insights
-              to make better decisions. Transform your feedback collection with
-              powerful analytics.
+              Design smart surveys, gather responses, and get AI-powered
+              insights to make better decisions. Transform your feedback
+              collection with powerful analytics.
             </p>
-            <Link href="/auth">
+            <Link href="/pricing">
               <Button size="lg" className="font-semibold">
                 Get Started
               </Button>
@@ -32,7 +32,9 @@ export default function LandingPage() {
               <div className="bg-primary/10 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4">
                 <ClipboardList className="w-6 h-6 text-primary" />
               </div>
-              <h3 className="text-xl font-semibold mb-2">Smart Survey Creation</h3>
+              <h3 className="text-xl font-semibold mb-2">
+                Smart Survey Creation
+              </h3>
               <p className="text-muted-foreground">
                 Generate engaging questions with AI assistance and create
                 professional surveys in minutes.

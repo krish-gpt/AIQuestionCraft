@@ -1,4 +1,4 @@
-import { MailService } from '@sendgrid/mail';
+import { MailService } from "@sendgrid/mail";
 
 const mailService = new MailService();
 mailService.setApiKey(process.env.SENDGRID_API_KEY!);
@@ -11,30 +11,31 @@ interface EmailParams {
 }
 
 export async function sendEmail(params: EmailParams): Promise<boolean> {
+  console.log("Sending email...");
   try {
     await mailService.send({
       to: params.to,
-      from: 'noreply@surveyai.com', // Update this with your verified sender
+      from: "support@formcreator.org", // Update this with your verified sender
       subject: params.subject,
-      text: params.text,
+      text: params.text || "",
       html: params.html,
     });
     return true;
   } catch (error) {
-    console.error('SendGrid email error:', error);
+    console.error("SendGrid email error:", error);
     return false;
   }
 }
 
 export async function sendPasswordResetEmail(
-  email: string, 
-  resetToken: string
+  email: string,
+  resetToken: string,
 ): Promise<boolean> {
   const resetLink = `${process.env.APP_URL}/auth?tab=reset&token=${resetToken}`;
 
   return sendEmail({
     to: email,
-    subject: 'Reset Your SurveyAI Password',
+    subject: "Reset Your SurveyAI Password",
     html: `
       <div style="max-width: 600px; margin: 0 auto; padding: 20px; font-family: Arial, sans-serif;">
         <h1 style="color: #333; text-align: center;">Password Reset Request</h1>
