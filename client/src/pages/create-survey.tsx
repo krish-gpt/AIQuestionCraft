@@ -182,6 +182,7 @@ export default function CreateSurvey() {
     form.setValue("questions", questions);
   };
 
+  // Add Question Function
   const addQuestion = () => {
     const questions = form.getValues("questions") || [];
     form.setValue("questions", [
@@ -190,7 +191,7 @@ export default function CreateSurvey() {
         id: crypto.randomUUID(),
         text: "",
         type: "text",
-        options: [],
+        options: [], // Initialize empty array for options
       },
     ]);
   };
@@ -447,10 +448,10 @@ export default function CreateSurvey() {
                                               <FormControl>
                                                 <Textarea
                                                   {...field}
-                                                  value={(field.value || []).join("\n")}
+                                                  value={Array.isArray(field.value) ? field.value.join('\n') : ''}
                                                   onChange={(e) => {
                                                     const options = e.target.value
-                                                      .split("\n")
+                                                      .split('\n')
                                                       .map(opt => opt.trim())
                                                       .filter(Boolean);
                                                     field.onChange(options);
