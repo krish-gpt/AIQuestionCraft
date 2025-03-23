@@ -26,6 +26,8 @@ import {
   ClipboardList,
   LogOut,
   Trash2,
+  PauseCircle,
+  PlayCircle,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -70,6 +72,31 @@ export default function HomePage() {
         title: "Error deleting survey",
         description:
           error instanceof Error ? error.message : "Failed to delete survey",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const toggleSurveyStatusMutation = useMutation({
+    mutationFn: async (surveyId: number) => {
+      const res = await apiRequest("PATCH", `/api/surveys/${surveyId}/toggle-status`);
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || "Failed to toggle survey status");
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/surveys"] });
+      toast({
+        title: "Survey status updated",
+        description: "The survey status has been updated successfully",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error updating survey status",
+        description:
+          error instanceof Error ? error.message : "Failed to update survey status",
         variant: "destructive",
       });
     },
@@ -178,6 +205,19 @@ export default function HomePage() {
                       </span>
                     </TableCell>
                     <TableCell className="text-right space-x-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => toggleSurveyStatusMutation.mutate(survey.id)}
+                        className="inline-flex items-center"
+                      >
+                        {survey.isActive ? (
+                          <PauseCircle className="h-4 w-4 mr-1" />
+                        ) : (
+                          <PlayCircle className="h-4 w-4 mr-1" />
+                        )}
+                        {survey.isActive ? "Stop" : "Start"}
+                      </Button>
                       <Button
                         variant="outline"
                         size="sm"

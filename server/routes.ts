@@ -72,29 +72,6 @@ export function registerRoutes(app: Express): Server {
 
     const response = await storage.createResponse(parseResult.data) as Response;
 
-    // Commenting out automatic sentiment analysis on response submission
-    // Moving this functionality to be only available through the /insights endpoint
-    /*
-    // Analyze sentiment for text responses
-    const textAnswers = Object.entries(response.answers as Record<string, string>)
-      .filter(([id]) => {
-        const question = (survey.questions as Array<{id: string, type: string}>)
-          .find(q => q.id === id);
-        return question?.type === "text";
-      })
-      .map(([, answer]) => answer)
-      .join(" ");
-
-    if (textAnswers) {
-      try {
-        const sentiment = await analyzeSentiment(textAnswers);
-        await storage.updateResponseSentiment(response.id, sentiment);
-        response.sentiment = sentiment;
-      } catch (err) {
-        console.error("Sentiment analysis error:", err);
-      }
-    }
-    */
 
     res.status(201).json(response);
   });
@@ -184,6 +161,18 @@ export function registerRoutes(app: Express): Server {
     if (survey.userId !== req.user!.id) return res.sendStatus(403);
 
     await storage.deleteSurvey(survey.id);
+    res.sendStatus(200);
+  });
+
+  app.patch("/api/surveys/:id/toggle-status", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+
+    const survey = await storage.getSurvey(Number(req.params.id));
+    if (!survey) return res.sendStatus(404);
+    if (survey.userId !== req.user!.id) return res.sendStatus(403);
+
+    // Toggle the survey status
+    await storage.updateSurveyStatus(survey.id, !survey.isActive);
     res.sendStatus(200);
   });
 

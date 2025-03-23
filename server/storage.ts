@@ -17,6 +17,7 @@ export interface IStorage {
   getSurvey(id: number): Promise<Survey | undefined>;
   getSurveysByUser(userId: number): Promise<Survey[]>;
   deleteSurvey(id: number): Promise<void>;
+  updateSurveyStatus(id: number, isActive: boolean): Promise<void>;
 
   createResponse(response: InsertResponse): Promise<Response>;
   getResponsesBySurvey(surveyId: number): Promise<Response[]>;
@@ -74,6 +75,13 @@ export class DatabaseStorage implements IStorage {
     await db.delete(responses).where(eq(responses.surveyId, id));
     // Then delete the survey
     await db.delete(surveys).where(eq(surveys.id, id));
+  }
+
+  async updateSurveyStatus(id: number, isActive: boolean): Promise<void> {
+    await db
+      .update(surveys)
+      .set({ isActive })
+      .where(eq(surveys.id, id));
   }
 
   async createResponse(insertResponse: InsertResponse): Promise<Response> {
