@@ -11,7 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { ClipboardList } from "lucide-react";
+import { ClipboardList, ChevronLeft } from "lucide-react";
 
 export default function TemplatesPage() {
   const [, setLocation] = useLocation();
@@ -28,6 +28,18 @@ export default function TemplatesPage() {
 
   return (
     <div className="container py-8">
+      <div className="flex items-center gap-4 mb-8">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setLocation("/dashboard")}
+          className="flex items-center gap-2"
+        >
+          <ChevronLeft className="h-4 w-4" />
+          Back to Dashboard
+        </Button>
+      </div>
+
       <div className="mb-8">
         <h1 className="text-4xl font-bold mb-4">Survey Templates</h1>
         <p className="text-muted-foreground">
