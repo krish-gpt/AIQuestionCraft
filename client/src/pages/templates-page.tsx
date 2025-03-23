@@ -11,7 +11,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
 import { ClipboardList } from "lucide-react";
 
 export default function TemplatesPage() {
@@ -22,29 +21,9 @@ export default function TemplatesPage() {
     queryKey: ["/api/templates"],
   });
 
-  const handleUseTemplate = async (template: SurveyTemplate) => {
-    try {
-      const res = await apiRequest("POST", "/api/surveys", {
-        title: template.title,
-        description: template.description,
-        questions: template.questions,
-      });
-
-      if (res.ok) {
-        const survey = await res.json();
-        toast({
-          title: "Template used successfully",
-          description: "Your new survey has been created from the template.",
-        });
-        setLocation(`/survey/${survey.id}`);
-      }
-    } catch (error) {
-      toast({
-        title: "Error using template",
-        description: "Failed to create survey from template",
-        variant: "destructive",
-      });
-    }
+  const handleUseTemplate = (template: SurveyTemplate) => {
+    // Instead of creating the survey directly, redirect to create page with template data
+    setLocation(`/create?template=${encodeURIComponent(JSON.stringify(template))}`);
   };
 
   const templateCategories = templates

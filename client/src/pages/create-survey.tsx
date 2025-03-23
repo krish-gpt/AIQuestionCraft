@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertSurveySchema, type Survey } from "@shared/schema";
@@ -54,11 +54,15 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 
 export default function CreateSurvey() {
-  const [, navigate] = useLocation();
+  const [location, setLocation] = useLocation();
   const { toast } = useToast();
   const [isGenerating, setIsGenerating] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
   const { user } = useAuth();
+
+  // Get template data from URL if present
+  const urlParams = new URLSearchParams(window.location.search);
+  const templateData = urlParams.get('template');
 
   const form = useForm({
     resolver: zodResolver(insertSurveySchema),
@@ -68,6 +72,30 @@ export default function CreateSurvey() {
       questions: [],
     },
   });
+
+  // Load template data if present
+  useEffect(() => {
+    if (templateData) {
+      try {
+        const template = JSON.parse(decodeURIComponent(templateData));
+        form.reset({
+          title: template.title,
+          description: template.description,
+          questions: template.questions.map((q: any) => ({
+            ...q,
+            id: crypto.randomUUID(), // Generate new IDs for questions
+          })),
+        });
+      } catch (error) {
+        console.error('Error parsing template data:', error);
+        toast({
+          title: "Error loading template",
+          description: "Failed to load template data",
+          variant: "destructive",
+        });
+      }
+    }
+  }, [templateData, form, toast]);
 
   const createSurveyMutation = useMutation({
     mutationFn: async (data) => {
