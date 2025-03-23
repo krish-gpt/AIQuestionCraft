@@ -228,6 +228,8 @@ export default function HomePage() {
                           });
                         }}
                         className="inline-flex items-center"
+                        disabled={!survey.isActive}
+                        title={!survey.isActive ? "Activate the survey to share" : undefined}
                       >
                         <Share2 className="h-4 w-4 mr-1" />
                         Share
