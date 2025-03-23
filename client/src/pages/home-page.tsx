@@ -208,19 +208,6 @@ export default function HomePage() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => toggleSurveyStatusMutation.mutate(survey.id)}
-                        className="inline-flex items-center"
-                      >
-                        {survey.isActive ? (
-                          <PauseCircle className="h-4 w-4 mr-1" />
-                        ) : (
-                          <PlayCircle className="h-4 w-4 mr-1" />
-                        )}
-                        {survey.isActive ? "Stop" : "Start"}
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
                         asChild
                         className="inline-flex items-center"
                       >
@@ -244,6 +231,19 @@ export default function HomePage() {
                       >
                         <Share2 className="h-4 w-4 mr-1" />
                         Share
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => toggleSurveyStatusMutation.mutate(survey.id)}
+                        className="inline-flex items-center"
+                      >
+                        {survey.isActive ? (
+                          <PauseCircle className="h-4 w-4 mr-1" />
+                        ) : (
+                          <PlayCircle className="h-4 w-4 mr-1" />
+                        )}
+                        {survey.isActive ? "Stop" : "Start"}
                       </Button>
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
