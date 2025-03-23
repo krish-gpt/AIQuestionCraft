@@ -470,6 +470,11 @@ export default function CreateSurvey() {
                                                   ref={field.ref}
                                                   className="min-h-[120px] text-lg font-normal resize-y"
                                                   placeholder="Enter each option on a new line&#10;Example:&#10;Option 1&#10;Option 2&#10;Option 3"
+                                                  onKeyDown={(e) => {
+                                                    if (e.key === 'Enter') {
+                                                      e.stopPropagation(); // Prevent form submission
+                                                    }
+                                                  }}
                                                 />
                                               </FormControl>
                                               <FormMessage />
