@@ -115,7 +115,7 @@ export default function CreateSurvey() {
         title: "Survey created",
         description: "Your survey is now ready to share",
       });
-      setLocation(`/analytics/${data.id}`);
+      navigate(`/analytics/${data.id}`);
     },
     onError: (error) => {
       toast({
@@ -134,7 +134,7 @@ export default function CreateSurvey() {
         description: "Please log in to generate questions",
         variant: "destructive",
       });
-      setLocation("/auth");
+      navigate("/auth");
       return;
     }
 
@@ -182,7 +182,6 @@ export default function CreateSurvey() {
     form.setValue("questions", questions);
   };
 
-  // Add Question Function with proper options initialization
   const addQuestion = () => {
     const questions = form.getValues("questions") || [];
     form.setValue("questions", [
@@ -191,13 +190,9 @@ export default function CreateSurvey() {
         id: crypto.randomUUID(),
         text: "",
         type: "text",
-        options: [], // Initialize with empty array for options
+        options: [],
       },
-    ], {
-      shouldValidate: true,
-      shouldDirty: true,
-      shouldTouch: true
-    });
+    ]);
   };
 
   const PreviewSurvey = () => {
@@ -451,30 +446,17 @@ export default function CreateSurvey() {
                                               </FormLabel>
                                               <FormControl>
                                                 <Textarea
-                                                  value={Array.isArray(field.value) ? field.value.join('\n') : ''}
+                                                  {...field}
+                                                  value={(field.value || []).join("\n")}
                                                   onChange={(e) => {
                                                     const options = e.target.value
-                                                      .split('\n')
+                                                      .split("\n")
                                                       .map(opt => opt.trim())
                                                       .filter(Boolean);
-
-                                                    // Update the form state with the new options array
-                                                    form.setValue(`questions.${index}.options`, options, {
-                                                      shouldValidate: true,
-                                                      shouldDirty: true,
-                                                      shouldTouch: true
-                                                    });
+                                                    field.onChange(options);
                                                   }}
-                                                  onBlur={field.onBlur}
-                                                  name={field.name}
-                                                  ref={field.ref}
-                                                  className="min-h-[120px] text-lg font-normal resize-y"
-                                                  placeholder="Enter each option on a new line&#10;Example:&#10;Option 1&#10;Option 2&#10;Option 3"
-                                                  onKeyDown={(e) => {
-                                                    if (e.key === 'Enter') {
-                                                      e.stopPropagation(); // Prevent form submission
-                                                    }
-                                                  }}
+                                                  className="min-h-[120px] text-lg whitespace-pre"
+                                                  placeholder="Enter each option on a new line"
                                                 />
                                               </FormControl>
                                               <FormMessage />
