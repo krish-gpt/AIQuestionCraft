@@ -436,35 +436,34 @@ export default function CreateSurvey() {
                                     </div>
                                     {form.watch(`questions.${index}.type`) ===
                                       "multiple_choice" && (
-                                      <FormField
-                                        control={form.control}
-                                        name={`questions.${index}.options`}
-                                        render={({ field }) => (
-                                          <FormItem>
-                                            <FormLabel>
-                                              Options (one per line)
-                                            </FormLabel>
-                                            <FormControl>
-                                              <Textarea
-                                                {...field}
-                                                value={(field.value || []).join(
-                                                  "\n",
-                                                )}
-                                                onChange={(e) =>
-                                                  field.onChange(
-                                                    e.target.value
+                                        <FormField
+                                          control={form.control}
+                                          name={`questions.${index}.options`}
+                                          render={({ field }) => (
+                                            <FormItem>
+                                              <FormLabel>
+                                                Options (one per line)
+                                              </FormLabel>
+                                              <FormControl>
+                                                <Textarea
+                                                  {...field}
+                                                  value={(field.value || []).join("\n")}
+                                                  onChange={(e) => {
+                                                    const options = e.target.value
                                                       .split("\n")
-                                                      .filter(Boolean),
-                                                  )
-                                                }
-                                                className="min-h-[120px] text-lg"
-                                              />
-                                            </FormControl>
-                                            <FormMessage />
-                                          </FormItem>
-                                        )}
-                                      />
-                                    )}
+                                                      .map(opt => opt.trim())
+                                                      .filter(Boolean);
+                                                    field.onChange(options);
+                                                  }}
+                                                  className="min-h-[120px] text-lg whitespace-pre"
+                                                  placeholder="Enter each option on a new line"
+                                                />
+                                              </FormControl>
+                                              <FormMessage />
+                                            </FormItem>
+                                          )}
+                                        />
+                                      )}
                                   </div>
                                 </div>
                               )}
