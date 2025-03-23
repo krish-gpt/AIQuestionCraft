@@ -26,12 +26,8 @@ export default function TemplatesPage() {
     setLocation(`/create?template=${encodeURIComponent(JSON.stringify(template))}`);
   };
 
-  const templateCategories = templates
-    ? [...new Set(templates.map((t) => t.category))]
-    : [];
-
   return (
-    <div className="container max-w-7xl py-8">
+    <div className="container py-8">
       <div className="mb-8">
         <h1 className="text-4xl font-bold mb-4">Survey Templates</h1>
         <p className="text-muted-foreground">
@@ -63,37 +59,28 @@ export default function TemplatesPage() {
           </CardHeader>
         </Card>
       ) : (
-        <div className="space-y-12">
-          {templateCategories.map((category) => (
-            <div key={category}>
-              <h2 className="text-2xl font-semibold mb-6">{category}</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {templates
-                  ?.filter((t) => t.category === category)
-                  .map((template) => (
-                    <Card key={template.id} className="flex flex-col">
-                      <CardHeader>
-                        <CardTitle>{template.title}</CardTitle>
-                        <CardDescription>
-                          {template.description}
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent className="flex-1">
-                        <p className="text-sm text-muted-foreground mb-4">
-                          {template.questions.length} questions
-                        </p>
-                        <Button
-                          className="w-full"
-                          onClick={() => handleUseTemplate(template)}
-                        >
-                          <ClipboardList className="mr-2 h-4 w-4" />
-                          Use Template
-                        </Button>
-                      </CardContent>
-                    </Card>
-                  ))}
-              </div>
-            </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {templates?.map((template) => (
+            <Card key={template.id} className="h-full flex flex-col">
+              <CardHeader>
+                <CardTitle>{template.title}</CardTitle>
+                <CardDescription>
+                  {template.description}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex-1 flex flex-col justify-between">
+                <p className="text-sm text-muted-foreground mb-4">
+                  {template.questions.length} questions
+                </p>
+                <Button
+                  className="w-full mt-auto"
+                  onClick={() => handleUseTemplate(template)}
+                >
+                  <ClipboardList className="mr-2 h-4 w-4" />
+                  Use Template
+                </Button>
+              </CardContent>
+            </Card>
           ))}
         </div>
       )}
