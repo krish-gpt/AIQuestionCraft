@@ -65,13 +65,19 @@ export function registerRoutes(app: Express): Server {
     const survey = await storage.getSurvey(Number(req.params.id)) as Survey;
     if (!survey) return res.sendStatus(404);
 
+    // Check if survey is closed
+    if (!survey.isActive) {
+      return res.status(403).json({ 
+        message: "This survey is currently closed and not accepting responses" 
+      });
+    }
+
     const parseResult = insertResponseSchema.safeParse(req.body);
     if (!parseResult.success) {
       return res.status(400).json(parseResult.error);
     }
 
     const response = await storage.createResponse(parseResult.data) as Response;
-
 
     res.status(201).json(response);
   });

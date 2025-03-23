@@ -96,6 +96,26 @@ export default function SurveyPage({ params }: { params: { id: string } }) {
     );
   }
 
+  if (!survey.isActive) {
+    return (
+      <div className="container max-w-3xl py-8">
+        <Card>
+          <CardHeader>
+            <CardTitle>{survey.title}</CardTitle>
+            <CardDescription>
+              This survey is currently closed and not accepting responses.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-muted-foreground">
+              The survey owner has closed this survey. Please contact them if you believe this is a mistake.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="container max-w-3xl py-8">
       <Form {...form}>
@@ -169,7 +189,7 @@ export default function SurveyPage({ params }: { params: { id: string } }) {
             <Button
               type="submit"
               size="lg"
-              disabled={submitResponse.isPending}
+              disabled={submitResponse.isPending || !survey.isActive} // Added check for survey.isActive
             >
               {submitResponse.isPending ? (
                 <>
