@@ -28,6 +28,7 @@ import {
   Trash2,
   PauseCircle,
   PlayCircle,
+  FileText,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -136,12 +137,20 @@ export default function HomePage() {
         <p className="text-xl text-muted-foreground mb-6">
           Create and analyze surveys with AI-powered insights.
         </p>
-        <Button asChild size="lg">
-          <Link href="/create">
-            <Plus className="mr-2 h-5 w-5" />
-            Create New Survey
-          </Link>
-        </Button>
+        <div className="flex gap-4 justify-center">
+          <Button asChild size="lg">
+            <Link href="/create">
+              <Plus className="mr-2 h-5 w-5" />
+              Create New Survey
+            </Link>
+          </Button>
+          <Button asChild size="lg" variant="outline">
+            <Link href="/templates">
+              <FileText className="mr-2 h-5 w-5" />
+              Use Template
+            </Link>
+          </Button>
+        </div>
       </div>
 
       {/* Surveys Section */}

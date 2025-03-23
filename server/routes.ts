@@ -48,6 +48,31 @@ export function registerRoutes(app: Express): Server {
     res.status(201).json(survey);
   });
 
+  app.post("/api/surveys/from-template/:id", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+
+    try {
+      const template = await storage.getTemplate(Number(req.params.id));
+      if (!template) return res.sendStatus(404);
+
+      const survey = await storage.createSurvey({
+        title: template.title,
+        description: template.description,
+        questions: template.questions,
+        userId: req.user!.id,
+        isActive: true
+      });
+
+      res.status(201).json(survey);
+    } catch (error) {
+      console.error("Error creating survey from template:", error);
+      res.status(500).json({ 
+        message: "Failed to create survey from template",
+        error: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
   app.get("/api/surveys", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
     const surveys = await storage.getSurveysByUser(req.user!.id);
@@ -181,6 +206,35 @@ export function registerRoutes(app: Express): Server {
     await storage.updateSurveyStatus(survey.id, !survey.isActive);
     res.sendStatus(200);
   });
+
+  // Add template routes
+  app.get("/api/templates", async (req, res) => {
+    try {
+      const templates = await storage.getTemplates();
+      res.json(templates);
+    } catch (error) {
+      console.error("Error fetching templates:", error);
+      res.status(500).json({ 
+        message: "Failed to fetch templates",
+        error: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
+  app.get("/api/templates/:id", async (req, res) => {
+    try {
+      const template = await storage.getTemplate(Number(req.params.id));
+      if (!template) return res.sendStatus(404);
+      res.json(template);
+    } catch (error) {
+      console.error("Error fetching template:", error);
+      res.status(500).json({ 
+        message: "Failed to fetch template",
+        error: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
 
   const httpServer = createServer(app);
   return httpServer;

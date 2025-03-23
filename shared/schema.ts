@@ -11,6 +11,19 @@ export const users = pgTable("users", {
   resetTokenExpiry: timestamp("reset_token_expiry"),
 });
 
+export const surveyTemplates = pgTable("survey_templates", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  description: text("description"),
+  category: text("category").notNull(),
+  questions: jsonb("questions").$type<{
+    id: string;
+    text: string;
+    type: "multiple_choice" | "text" | "rating";
+    options?: string[];
+  }[]>().notNull(),
+});
+
 export const surveys = pgTable("surveys", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull(),
@@ -67,9 +80,22 @@ export const insertSurveySchema = createInsertSchema(surveys)
 export const insertResponseSchema = createInsertSchema(responses)
   .omit({ id: true, submittedAt: true, sentiment: true });
 
+export const insertTemplateSchema = createInsertSchema(surveyTemplates)
+  .omit({ id: true })
+  .extend({
+    questions: z.array(z.object({
+      id: z.string(),
+      text: z.string(),
+      type: z.enum(["multiple_choice", "text", "rating"]),
+      options: z.array(z.string()).optional(),
+    }))
+  });
+
 export type User = typeof users.$inferSelect;
 export type Survey = typeof surveys.$inferSelect;
 export type Response = typeof responses.$inferSelect;
+export type SurveyTemplate = typeof surveyTemplates.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type InsertSurvey = z.infer<typeof insertSurveySchema>;
 export type InsertResponse = z.infer<typeof insertResponseSchema>;
+export type InsertTemplate = z.infer<typeof insertTemplateSchema>;

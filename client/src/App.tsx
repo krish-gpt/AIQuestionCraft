@@ -10,6 +10,7 @@ import CreateSurvey from "@/pages/create-survey";
 import Survey from "@/pages/survey";
 import Analytics from "@/pages/analytics";
 import LandingPage from "@/pages/landing-page";
+import TemplatesPage from "@/pages/templates-page";
 import { ProtectedRoute } from "./lib/protected-route";
 import PricingPage from "./pages/pricing-page";
 
@@ -22,6 +23,7 @@ function Router() {
         <Route path="/pricing" component={PricingPage} />
         <ProtectedRoute path="/dashboard" component={HomePage} />
         <ProtectedRoute path="/create" component={CreateSurvey} />
+        <ProtectedRoute path="/templates" component={TemplatesPage} />
         <ProtectedRoute
           path="/analytics/:id"
           component={({ params }) => <Analytics params={params} />}
