@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,52 +19,20 @@ import {
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Link } from "wouter"; //import Link from wouter
-
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertUserSchema } from "@shared/schema";
 import { Redirect } from "wouter";
-import { ClipboardList } from "lucide-react";
-import { z } from "zod";
-import { useToast } from "@/hooks/use-toast";
-import React from "react";
-
-const resetPasswordSchema = z.object({
-  email: z.string().email("Please enter a valid email address"),
-});
-
-const confirmResetSchema = z
-  .object({
-    token: z.string().min(1, "Reset token is required"),
-    newPassword: z.string().min(6, "Password must be at least 6 characters"),
-    confirmPassword: z
-      .string()
-      .min(6, "Password must be at least 6 characters"),
-  })
-  .refine((data) => data.newPassword === data.confirmPassword, {
-    message: "Passwords do not match",
-    path: ["confirmPassword"],
-  });
-
-type ResetPasswordData = z.infer<typeof resetPasswordSchema>;
-type ConfirmResetData = z.infer<typeof confirmResetSchema>;
+import { ClipboardList, Eye, EyeOff } from "lucide-react";
 
 export default function AuthPage() {
   const { user, loginMutation, registerMutation } = useAuth();
-  const { toast } = useToast();
-  const [resetToken, setResetToken] = React.useState<string | null>(null);
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [showRegisterPassword, setShowRegisterPassword] = useState(false);
 
   // Get the default tab from URL search params using window.location.search
   const searchParams = new URLSearchParams(window.location.search);
-  const defaultTab = searchParams.get("tab") || "login";
+  const defaultTab = searchParams.get('tab') || "login";
 
   const loginForm = useForm({
     resolver: zodResolver(insertUserSchema.omit({ email: true })),
@@ -81,87 +50,6 @@ export default function AuthPage() {
       password: "",
     },
   });
-
-  const resetPasswordForm = useForm({
-    resolver: zodResolver(resetPasswordSchema),
-    defaultValues: {
-      email: "",
-    },
-  });
-
-  const confirmResetForm = useForm({
-    resolver: zodResolver(confirmResetSchema),
-    defaultValues: {
-      token: searchParams.get("token") || "",
-      newPassword: "",
-      confirmPassword: "",
-    },
-  });
-
-  const onResetPassword = async (data: ResetPasswordData) => {
-    try {
-      const response = await fetch("/api/reset-password", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
-      });
-
-      const result = await response.json();
-
-      if (response.ok) {
-        toast({
-          title: "Reset email sent",
-          description: "Check your email for the password reset link",
-        });
-      } else {
-        throw new Error(result.message || "Failed to send reset email");
-      }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description:
-          error instanceof Error
-            ? error.message
-            : "Failed to process reset request",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const onConfirmReset = async (data: ConfirmResetData) => {
-    try {
-      const response = await fetch("/api/reset-password/confirm", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
-      });
-
-      const result = await response.json();
-
-      if (response.ok) {
-        toast({
-          title: "Password reset successful",
-          description: "You can now login with your new password",
-        });
-        // Reset the form and close the dialog
-        confirmResetForm.reset();
-        setResetToken(null);
-      } else {
-        throw new Error(result.message || "Failed to reset password");
-      }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description:
-          error instanceof Error ? error.message : "Failed to reset password",
-        variant: "destructive",
-      });
-    }
-  };
 
   if (user) {
     return <Redirect to="/dashboard" />;
@@ -211,9 +99,27 @@ export default function AuthPage() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Password</FormLabel>
-                          <FormControl>
-                            <Input type="password" {...field} />
-                          </FormControl>
+                          <div className="relative">
+                            <FormControl>
+                              <Input 
+                                type={showLoginPassword ? "text" : "password"} 
+                                {...field} 
+                              />
+                            </FormControl>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                              onClick={() => setShowLoginPassword(!showLoginPassword)}
+                            >
+                              {showLoginPassword ? (
+                                <EyeOff className="h-4 w-4 text-muted-foreground" />
+                              ) : (
+                                <Eye className="h-4 w-4 text-muted-foreground" />
+                              )}
+                            </Button>
+                          </div>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -279,9 +185,27 @@ export default function AuthPage() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Password</FormLabel>
-                          <FormControl>
-                            <Input type="password" {...field} />
-                          </FormControl>
+                          <div className="relative">
+                            <FormControl>
+                              <Input 
+                                type={showRegisterPassword ? "text" : "password"} 
+                                {...field} 
+                              />
+                            </FormControl>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                              onClick={() => setShowRegisterPassword(!showRegisterPassword)}
+                            >
+                              {showRegisterPassword ? (
+                                <EyeOff className="h-4 w-4 text-muted-foreground" />
+                              ) : (
+                                <Eye className="h-4 w-4 text-muted-foreground" />
+                              )}
+                            </Button>
+                          </div>
                           <FormMessage />
                         </FormItem>
                       )}
