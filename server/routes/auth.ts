@@ -1,12 +1,12 @@
+import { Router } from "express";
 import { sendPasswordResetEmail } from "../lib/email-service";
 import { randomBytes } from "crypto";
 import { storage } from "../storage";
 import { hash } from "bcrypt";
 
-// ... existing imports and code ...
+const router = Router();
 
 router.post("/reset-password", async (req, res) => {
-  console.log(req.body, "reset password");
   try {
     const { email } = req.body;
 
@@ -57,3 +57,5 @@ router.post("/reset-password/confirm", async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 });
+
+export default router;

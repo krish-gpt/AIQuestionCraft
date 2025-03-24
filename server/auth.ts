@@ -2,12 +2,10 @@ import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
 import { Express } from "express";
 import session from "express-session";
-import { scrypt, randomBytes, timingSafeEqual } from "crypto";
-import { promisify } from "util";
 import { storage } from "./storage";
 import { User as SelectUser } from "@shared/schema";
 import { sendPasswordResetEmail } from "./lib/email-service";
-import { hash } from "bcrypt";
+import { hash, compare } from "bcrypt";
 
 declare global {
   namespace Express {
@@ -15,19 +13,10 @@ declare global {
   }
 }
 
-const scryptAsync = promisify(scrypt);
+const SALT_ROUNDS = 10;
 
 async function hashPassword(password: string) {
-  const salt = randomBytes(16).toString("hex");
-  const buf = (await scryptAsync(password, salt, 64)) as Buffer;
-  return `${buf.toString("hex")}.${salt}`;
-}
-
-async function comparePasswords(supplied: string, stored: string) {
-  const [hashed, salt] = stored.split(".");
-  const hashedBuf = Buffer.from(hashed, "hex");
-  const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
-  return timingSafeEqual(hashedBuf, suppliedBuf);
+  return hash(password, SALT_ROUNDS);
 }
 
 export function setupAuth(app: Express) {
@@ -64,9 +53,15 @@ export function setupAuth(app: Express) {
     new LocalStrategy(async (username, password, done) => {
       try {
         const user = await storage.getUserByUsername(username);
-        if (!user || !(await comparePasswords(password, user.password))) {
+        if (!user) {
           return done(null, false);
         }
+
+        const isValid = await compare(password, user.password);
+        if (!isValid) {
+          return done(null, false);
+        }
+
         return done(null, user);
       } catch (error) {
         return done(error);
@@ -128,12 +123,11 @@ export function setupAuth(app: Express) {
   });
 
   app.post("/api/reset-password", async (req, res) => {
-    console.log(req.body, "reset password");
     try {
       const { email } = req.body;
 
       // Generate a random reset token
-      const resetToken = randomBytes(32).toString("hex");
+      const resetToken = require('crypto').randomBytes(32).toString('hex');
 
       // Store the reset token in the database with an expiration (2 hours)
       const expiresAt = new Date(Date.now() + 2 * 60 * 60 * 1000);
@@ -164,8 +158,8 @@ export function setupAuth(app: Express) {
         return res.status(400).json({ error: "Invalid or expired reset token" });
       }
 
-      // Hash the new password
-      const hashedPassword = await hash(newPassword, 10);
+      // Hash the new password using bcrypt
+      const hashedPassword = await hashPassword(newPassword);
 
       // Update the user's password
       await storage.updateUserPassword(resetInfo.email, hashedPassword);
