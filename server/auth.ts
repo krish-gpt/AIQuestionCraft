@@ -6,6 +6,7 @@ import { storage } from "./storage";
 import { User as SelectUser } from "@shared/schema";
 import { sendPasswordResetEmail } from "./lib/email-service";
 import { hash, compare } from "bcrypt";
+import { randomBytes } from "crypto";
 
 declare global {
   namespace Express {
@@ -135,8 +136,8 @@ export function setupAuth(app: Express) {
     try {
       const { email } = req.body;
 
-      // Generate a random reset token
-      const resetToken = require('crypto').randomBytes(32).toString('hex');
+      // Generate a random reset token using global crypto
+      const resetToken = randomBytes(32).toString("hex");
 
       // Store the reset token in the database with an expiration (2 hours)
       const expiresAt = new Date(Date.now() + 2 * 60 * 60 * 1000);
