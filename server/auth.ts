@@ -15,6 +15,11 @@ declare global {
 
 const SALT_ROUNDS = 10;
 
+// Function to decode password from base64
+function decodePassword(encodedPassword: string): string {
+  return decodeURIComponent(escape(atob(encodedPassword)));
+}
+
 async function hashPassword(password: string) {
   return hash(password, SALT_ROUNDS);
 }
@@ -33,7 +38,7 @@ export function setupAuth(app: Express) {
     saveUninitialized: false,
     store: storage.sessionStore,
     cookie: {
-      secure: false,
+      secure: process.env.NODE_ENV === "production",
       maxAge: 24 * 60 * 60 * 1000,
       httpOnly: true,
       sameSite: "lax",
@@ -57,7 +62,9 @@ export function setupAuth(app: Express) {
           return done(null, false);
         }
 
-        const isValid = await compare(password, user.password);
+        // Decode the password before comparison
+        const decodedPassword = decodePassword(password);
+        const isValid = await compare(decodedPassword, user.password);
         if (!isValid) {
           return done(null, false);
         }
@@ -92,9 +99,11 @@ export function setupAuth(app: Express) {
         return res.status(400).send("Username already exists");
       }
 
+      // Decode password before hashing
+      const decodedPassword = decodePassword(req.body.password);
       const user = await storage.createUser({
         ...req.body,
-        password: await hashPassword(req.body.password),
+        password: await hashPassword(decodedPassword),
       });
 
       req.login(user, (err) => {
@@ -158,8 +167,9 @@ export function setupAuth(app: Express) {
         return res.status(400).json({ error: "Invalid or expired reset token" });
       }
 
-      // Hash the new password using bcrypt
-      const hashedPassword = await hashPassword(newPassword);
+      // Decode and hash the new password
+      const decodedPassword = decodePassword(newPassword);
+      const hashedPassword = await hashPassword(decodedPassword);
 
       // Update the user's password
       await storage.updateUserPassword(resetInfo.email, hashedPassword);

@@ -19,6 +19,11 @@ type AuthContextType = {
 
 type LoginData = Pick<InsertUser, "username" | "password">;
 
+// Function to encode password for secure transmission
+function encodePassword(password: string): string {
+  return btoa(unescape(encodeURIComponent(password)));
+}
+
 export const AuthContext = createContext<AuthContextType | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
@@ -33,7 +38,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginData) => {
-      const res = await apiRequest("POST", "/api/login", credentials);
+      const secureCredentials = {
+        ...credentials,
+        password: encodePassword(credentials.password),
+      };
+      const res = await apiRequest("POST", "/api/login", secureCredentials);
       return await res.json();
     },
     onSuccess: (user: SelectUser) => {
@@ -50,7 +59,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const registerMutation = useMutation({
     mutationFn: async (credentials: InsertUser) => {
-      const res = await apiRequest("POST", "/api/register", credentials);
+      const secureCredentials = {
+        ...credentials,
+        password: encodePassword(credentials.password),
+      };
+      const res = await apiRequest("POST", "/api/register", secureCredentials);
       return await res.json();
     },
     onSuccess: (user: SelectUser) => {

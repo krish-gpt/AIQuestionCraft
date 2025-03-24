@@ -36,10 +36,15 @@ const confirmResetSchema = z
     path: ["confirmPassword"],
   });
 
+// Function to encode password for secure transmission
+function encodePassword(password: string): string {
+  return btoa(unescape(encodeURIComponent(password)));
+}
+
 export default function ForgetPage() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  
+
   // Get token from URL if present
   const urlParams = new URLSearchParams(window.location.search);
   const resetToken = urlParams.get("token");
@@ -94,12 +99,18 @@ export default function ForgetPage() {
 
   const onConfirmReset = async (data: z.infer<typeof confirmResetSchema>) => {
     try {
+      // Encode the password before sending
+      const secureData = {
+        ...data,
+        newPassword: encodePassword(data.newPassword),
+      };
+
       const response = await fetch("/api/reset-password/confirm", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify(secureData),
       });
 
       const result = await response.json();
