@@ -17,6 +17,8 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Link } from "wouter"; //import Link from wouter
+
 import {
   Dialog,
   DialogContent,
@@ -180,7 +182,6 @@ export default function AuthPage() {
               <TabsList className="grid grid-cols-2 w-full">
                 <TabsTrigger value="login">Login</TabsTrigger>
                 <TabsTrigger value="register">Register</TabsTrigger>
-                {/* <TabsTrigger value="reset">Reset Password</TabsTrigger> */}
               </TabsList>
 
               <TabsContent value="login">
@@ -225,50 +226,14 @@ export default function AuthPage() {
                       >
                         {loginMutation.isPending ? "Signing in..." : "Sign in"}
                       </Button>
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button
-                            variant="link"
-                            className="text-sm text-muted-foreground"
-                          >
-                            Forgot password?
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>Reset Password</DialogTitle>
-                            <DialogDescription>
-                              Enter your email address to receive a password
-                              reset link
-                            </DialogDescription>
-                          </DialogHeader>
-                          <Form {...resetPasswordForm}>
-                            <form
-                              onSubmit={resetPasswordForm.handleSubmit(
-                                onResetPassword,
-                              )}
-                              className="space-y-4"
-                            >
-                              <FormField
-                                control={resetPasswordForm.control}
-                                name="email"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>Email</FormLabel>
-                                    <FormControl>
-                                      <Input type="email" {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-                              <Button type="submit" className="w-full">
-                                Send Reset Link
-                              </Button>
-                            </form>
-                          </Form>
-                        </DialogContent>
-                      </Dialog>
+                      <Link href="/forget">
+                        <Button
+                          variant="link"
+                          className="text-sm text-muted-foreground"
+                        >
+                          Forgot password?
+                        </Button>
+                      </Link>
                     </div>
                   </form>
                 </Form>
@@ -329,58 +294,6 @@ export default function AuthPage() {
                       {registerMutation.isPending
                         ? "Creating account..."
                         : "Create account"}
-                    </Button>
-                  </form>
-                </Form>
-              </TabsContent>
-
-              <TabsContent value="reset">
-                <Form {...confirmResetForm}>
-                  <form
-                    onSubmit={confirmResetForm.handleSubmit(onConfirmReset)}
-                    className="space-y-4"
-                  >
-                    <FormField
-                      control={confirmResetForm.control}
-                      name="token"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Reset Token</FormLabel>
-                          <FormControl>
-                            <Input {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={confirmResetForm.control}
-                      name="newPassword"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>New Password</FormLabel>
-                          <FormControl>
-                            <Input type="password" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={confirmResetForm.control}
-                      name="confirmPassword"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Confirm Password</FormLabel>
-                          <FormControl>
-                            <Input type="password" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <Button type="submit" className="w-full">
-                      Reset Password
                     </Button>
                   </form>
                 </Form>

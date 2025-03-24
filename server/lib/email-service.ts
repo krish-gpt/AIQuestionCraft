@@ -31,7 +31,7 @@ export async function sendPasswordResetEmail(
   email: string,
   resetToken: string,
 ): Promise<boolean> {
-  const resetLink = `${process.env.APP_URL}/auth?tab=reset&token=${resetToken}`;
+  const resetLink = `${process.env.APP_URL}/forget?token=${resetToken}`;
   const htmlContent = `
     <div style="max-width: 600px; margin: 0 auto; padding: 20px; font-family: Arial, sans-serif;">
       <h1 style="color: #333; text-align: center;">Password Reset Request</h1>

@@ -13,6 +13,7 @@ import LandingPage from "@/pages/landing-page";
 import TemplatesPage from "@/pages/templates-page";
 import { ProtectedRoute } from "./lib/protected-route";
 import PricingPage from "./pages/pricing-page";
+import ForgetPage from "@/pages/forget-page";
 
 function Router() {
   return (
@@ -20,6 +21,7 @@ function Router() {
       <Switch>
         <Route path="/" component={LandingPage} />
         <Route path="/auth" component={AuthPage} />
+        <Route path="/forget" component={ForgetPage} />
         <Route path="/pricing" component={PricingPage} />
         <ProtectedRoute path="/dashboard" component={HomePage} />
         <ProtectedRoute path="/create" component={CreateSurvey} />
